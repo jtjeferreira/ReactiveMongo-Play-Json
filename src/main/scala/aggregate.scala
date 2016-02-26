@@ -41,8 +41,16 @@ object JSONAggregationFramework
 }
 
 object JSONAggregationImplicits {
-  import play.api.libs.json.{ JsArray, JsObject, JsValue, OWrites }
-  import reactivemongo.api.commands.ResolvedCollectionCommand
+  import play.api.libs.json.{
+    JsArray,
+    JsError,
+    JsObject,
+    JsSuccess,
+    JsValue,
+    Reads,
+    OWrites
+  }
+  import reactivemongo.api.commands.{ ResolvedCollectionCommand, ResultCursor }
   import reactivemongo.core.protocol.MongoWireVersion
   import JSONAggregationFramework.{ Aggregate, AggregationResult }
   import reactivemongo.play.json.BSONFormats
@@ -78,8 +86,16 @@ object JSONAggregationImplicits {
 
   implicit object AggregationResultReader
       extends DealingWithGenericCommandErrorsReader[AggregationResult] {
-    def readResult(doc: JsObject): AggregationResult =
-      AggregationResult((doc \ "result").as[List[JsObject]])
 
+    def readResult(doc: JsObject): AggregationResult =
+      (doc \ "result").validateOpt[List[JsObject]].flatMap {
+        case Some(docs) => JsSuccess(AggregationResult(docs, None))
+        case _ => for {
+          cursor <- (doc \ "cursor").validate[JsObject]
+          id <- (cursor \ "id").validate[Long]
+          ns <- (cursor \ "ns").validate[String]
+          firstBatch <- (cursor \ "firstBatch").validate[List[JsObject]]
+        } yield AggregationResult(firstBatch, Some(ResultCursor(id, ns)))
+      }.get
   }
 }
