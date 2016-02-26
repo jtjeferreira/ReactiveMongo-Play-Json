@@ -50,7 +50,7 @@ object JSONAggregationImplicits {
   implicit object AggregateWriter
       extends OWrites[ResolvedCollectionCommand[Aggregate]] {
     def writes(agg: ResolvedCollectionCommand[Aggregate]): JsObject = {
-      val fields = Map[String, JsValue](
+      val fields = Seq[(String, JsValue)](
         "aggregate" -> toJson(agg.collection),
         "pipeline" -> JsArray(agg.command.pipeline.map(_.makePipe)),
         "explain" -> toJson(agg.command.explain),
