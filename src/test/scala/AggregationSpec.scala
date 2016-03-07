@@ -165,8 +165,8 @@ object AggregationSpec extends org.specs2.mutable.Specification {
     }
 
     "return distinct states" in {
-      collection.distinct[String]("state").
-        aka("states") must beEqualTo(List("NY", "FR", "JP")).
+      collection.distinct[String, Set]("state").
+        aka("states") must beEqualTo(Set("NY", "FR", "JP")).
         await(timeoutMillis)
     }
 
