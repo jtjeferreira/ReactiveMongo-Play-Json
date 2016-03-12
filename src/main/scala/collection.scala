@@ -44,7 +44,6 @@ import reactivemongo.api.collections.{
   GenericQueryBuilder
 }
 import reactivemongo.api.commands.{ WriteConcern, WriteResult }
-import reactivemongo.util.option
 
 import reactivemongo.play.json.{ BSONFormats, JSONSerializationPack }
 
@@ -55,6 +54,9 @@ object `package` {
   implicit object JSONCollectionProducer extends GenericCollectionProducer[JSONSerializationPack.type, JSONCollection] {
     def apply(db: DB, name: String, failoverStrategy: FailoverStrategy) = new JSONCollection(db, name, failoverStrategy)
   }
+
+  private[collection] def option[T](cond: => Boolean, value: => T): Option[T] =
+    if (cond) Some(value) else None
 }
 
 object JSONBatchCommands
