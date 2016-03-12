@@ -9,7 +9,7 @@ In your `project/Build.scala`:
 ```scala
 // only for Play 2.4.x
 libraryDependencies ++= Seq(
-  "org.reactivemongo" %% "reactivemongo-play-json" % "0.11.9")
+  "org.reactivemongo" %% "reactivemongo-play-json" % "0.11.10")
 ```
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.reactivemongo/reactivemongo-play-json_2.11/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.reactivemongo/reactivemongo-play-json_2.11/)

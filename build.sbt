@@ -22,7 +22,7 @@ resolvers ++= Seq(
 
 libraryDependencies ++= Seq(
   "org.reactivemongo" %% "reactivemongo" % buildVersion % "provided" cross CrossVersion.binary,
-  "com.typesafe.play" %% "play-json" % "2.4.5" % "provided" cross CrossVersion.binary)
+  "com.typesafe.play" %% "play-json" % "2.5.0" % "provided" cross CrossVersion.binary)
 
 // Test
 
