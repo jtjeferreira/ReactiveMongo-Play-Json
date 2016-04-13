@@ -34,11 +34,9 @@ testOptions in Test += Tests.Cleanup(cl => {
   m.closeDriver()
 })
 
-libraryDependencies ++= (Seq(
-  "specs2-core"
-).map("org.specs2" %% _ % "2.4.9") ++ Seq(
-  "org.slf4j" % "slf4j-simple" % "1.7.13")).
-  map(_ % Test)
+libraryDependencies ++= Seq(
+  "org.specs2" %% "specs2-core" % "3.7.2",
+  "org.slf4j" % "slf4j-simple" % "1.7.13").map(_ % Test)
 
 // Publish
 
