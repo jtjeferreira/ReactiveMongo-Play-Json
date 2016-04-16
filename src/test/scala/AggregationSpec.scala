@@ -1,6 +1,10 @@
 import scala.concurrent.Future
 
-import play.api.libs.json.{ Json, JsObject }, Json.{ obj => document, toJson }
+import play.api.libs.json.{
+  JsArray,
+  Json,
+  JsObject
+}, Json.{ obj => document, toJson }
 
 import org.specs2.concurrent.{ ExecutionEnv => EE }
 
@@ -64,11 +68,24 @@ object AggregationSpec extends org.specs2.mutable.Specification {
 
       collection.aggregate(Group(toJson("$state"))(
         "totalPop" -> SumField("population")
-      ), List(
-        Match(document("totalPop" ->
-          document("$gte" -> 10000000L)))
-      )).map(_.firstBatch).
-        aka("results") must beEqualTo(expected).await(1, timeout)
+      ), List(Match(document("totalPop" -> document("$gte" -> 10000000L))))).
+        map(_.firstBatch) must beEqualTo(expected).await(1, timeout)
+    }
+
+    "explain simple result" in { implicit ee: EE =>
+      val expected = List(
+        document("_id" -> "JP", "totalPop" -> 13185702L),
+        document("_id" -> "NY", "totalPop" -> 19746227L)
+      )
+
+      collection.aggregate(Group(toJson("$state"))(
+        "totalPop" -> SumField("population")
+      ), List(Match(document("totalPop" -> document("$gte" -> 10000000L)))),
+        explain = true).map(_.firstBatch) must beLike[List[JsObject]] {
+        case explainResult :: Nil =>
+          (explainResult \ "stages").asOpt[List[JsObject]] must beSome
+
+      }.await(1, timeout)
     }
 
     "return average city population by state" >> {
