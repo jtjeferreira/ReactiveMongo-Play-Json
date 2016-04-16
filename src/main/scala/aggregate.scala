@@ -88,14 +88,16 @@ object JSONAggregationImplicits {
       extends DealingWithGenericCommandErrorsReader[AggregationResult] {
 
     def readResult(doc: JsObject): AggregationResult =
-      (doc \ "result").validateOpt[List[JsObject]].flatMap {
-        case Some(docs) => JsSuccess(AggregationResult(docs, None))
-        case _ => for {
-          cursor <- (doc \ "cursor").validate[JsObject]
-          id <- (cursor \ "id").validate[Long]
-          ns <- (cursor \ "ns").validate[String]
-          firstBatch <- (cursor \ "firstBatch").validate[List[JsObject]]
-        } yield AggregationResult(firstBatch, Some(ResultCursor(id, ns)))
-      }.get
+      if (doc.value contains "stages") AggregationResult(List(doc), None) else {
+        (doc \ "result").validateOpt[List[JsObject]].flatMap {
+          case Some(docs) => JsSuccess(AggregationResult(docs, None))
+          case _ => for {
+            cursor <- (doc \ "cursor").validate[JsObject]
+            id <- (cursor \ "id").validate[Long]
+            ns <- (cursor \ "ns").validate[String]
+            firstBatch <- (cursor \ "firstBatch").validate[List[JsObject]]
+          } yield AggregationResult(firstBatch, Some(ResultCursor(id, ns)))
+        }.get
+      }
   }
 }
