@@ -22,7 +22,7 @@ resolvers ++= Seq(
 
 libraryDependencies ++= Seq(
   "org.reactivemongo" %% "reactivemongo" % buildVersion % "provided" cross CrossVersion.binary,
-  "com.typesafe.play" %% "play-json" % "2.5.0" % "provided" cross CrossVersion.binary)
+  "com.typesafe.play" %% "play-json" % "2.5.2" % "provided" cross CrossVersion.binary)
 
 // Test
 
@@ -35,7 +35,7 @@ testOptions in Test += Tests.Cleanup(cl => {
 })
 
 libraryDependencies ++= Seq(
-  "org.specs2" %% "specs2-core" % "3.7.2",
+  "org.specs2" %% "specs2-core" % "3.8.3",
   "org.slf4j" % "slf4j-simple" % "1.7.13").map(_ % Test)
 
 // Publish
