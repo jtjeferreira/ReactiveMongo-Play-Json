@@ -4,7 +4,7 @@ import reactivemongo.core.errors.DetailedDatabaseException
 
 import org.specs2.concurrent.{ ExecutionEnv => EE }
 
-object JSONCollectionSpec extends org.specs2.mutable.Specification {
+class JSONCollectionSpec extends org.specs2.mutable.Specification {
   "JSON collection" title
 
   sequential
@@ -120,7 +120,7 @@ object JSONCollectionSpec extends org.specs2.mutable.Specification {
       )
 
       builder.merge(ReadPreference.Primary).toString.
-        aka("merged") must beEqualTo("{\"username\":\"John Doe\"}")
+        aka("merged") must beEqualTo("""{"$query":{"username":"John Doe"},"$readPreference":{"mode":"primary"}}""")
     }
 
     "write an JsObject with only defined options" in { implicit ee: EE =>
@@ -130,18 +130,17 @@ object JSONCollectionSpec extends org.specs2.mutable.Specification {
         queryOption = Option(Json.obj("username" -> "John Doe")),
         sortOption = Option(Json.obj("age" -> 1))
       )
-      builder1.merge(ReadPreference.Primary).toString must beEqualTo("{\"$query\":{\"username\":\"John Doe\"},\"$orderby\":{\"age\":1}}")
+      builder1.merge(ReadPreference.Primary).toString must beEqualTo("""{"$query":{"username":"John Doe"},"$orderby":{"age":1},"$readPreference":{"mode":"primary"}}""")
 
       val builder2 = builder1.copy(commentString = Option("get john doe users sorted by age"))
-      builder2.merge(ReadPreference.Primary).toString must beEqualTo("{\"$query\":{\"username\":\"John Doe\"},\"$orderby\":{\"age\":1},\"$comment\":\"get john doe users sorted by age\"}")
+      builder2.merge(ReadPreference.Primary).toString must beEqualTo("""{"$query":{"username":"John Doe"},"$orderby":{"age":1},"$comment":"get john doe users sorted by age","$readPreference":{"mode":"primary"}}""")
     }
   }
 
   "JSON collection" should {
     "find with empty criteria document" in { implicit ee: EE =>
-      collection.find(Json.obj(
-        "$query" -> Json.obj(), "$orderby" -> Json.obj("updated" -> -1)
-      )).cursor[JsObject]().collect[List]().
+      collection.find(Json.obj()).sort(Json.obj("updated" -> -1)).
+        cursor[JsObject]().collect[List]().
         aka("find with empty document") must not(throwA[Throwable]).
         await(1, timeout)
     }

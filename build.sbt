@@ -2,7 +2,7 @@ organization := "org.reactivemongo"
 
 name := "reactivemongo-play-json"
 
-val buildVersion = "0.11.11"
+val buildVersion = "0.11.12"
 
 version := s"$buildVersion-play24"
 
@@ -35,7 +35,7 @@ testOptions in Test += Tests.Cleanup(cl => {
 })
 
 libraryDependencies ++= Seq(
-  "org.specs2" %% "specs2-core" % "3.7.2",
+  "org.specs2" %% "specs2-core" % "3.8.3",
   "org.slf4j" % "slf4j-simple" % "1.7.13").map(_ % Test)
 
 // Publish
