@@ -3,7 +3,7 @@ import play.api.libs.json.{ Json, JsNumber, JsString, JsObject, __ }
 import reactivemongo.bson.{ BSONArray, BSONDocument }
 import reactivemongo.play.json._
 
-object JsonSpec extends org.specs2.mutable.Specification {
+class JsonSpec extends org.specs2.mutable.Specification {
   "JSON" title
 
   sequential

@@ -447,7 +447,7 @@ case class JSONQueryBuilder(
 )
     extends GenericQueryBuilder[JSONSerializationPack.type] {
 
-  import play.api.libs.json.Json.JsValueWrapper
+  import play.api.libs.json.{ JsValue, Json }
 
   type Self = JSONQueryBuilder
 
@@ -458,32 +458,38 @@ case class JSONQueryBuilder(
     JSONQueryBuilder(collection, failover, queryOption, sortOption, projectionOption, hintOption, explainFlag, snapshotFlag, commentString, options, maxTimeMsOption)
 
   def merge(readPreference: ReadPreference): JsObject = {
-    // Primary and SecondaryPreferred are encoded as the slaveOk flag;
-    // the others are encoded as $readPreference field.
-    val readPreferenceDocument = readPreference match {
-      case ReadPreference.Primary                    => None
-      case ReadPreference.PrimaryPreferred(filter)   => Some(Json.obj("mode" -> "primaryPreferred"))
-      case ReadPreference.Secondary(filter)          => Some(Json.obj("mode" -> "secondary"))
-      case ReadPreference.SecondaryPreferred(filter) => None
-      case ReadPreference.Nearest(filter)            => Some(Json.obj("mode" -> "nearest"))
+    def pref = {
+      val mode = readPreference match {
+        case ReadPreference.Primary                    => "primary"
+        case ReadPreference.PrimaryPreferred(filter)   => "primaryPreferred"
+        case ReadPreference.Secondary(filter)          => "secondary"
+        case ReadPreference.SecondaryPreferred(filter) => "secondaryPreferred"
+        case ReadPreference.Nearest(filter)            => "nearest"
+      }
+      val base = Seq[(String, JsValue)]("mode" -> Json.toJson(mode))
+
+      JsObject(readPreference match {
+        case ReadPreference.Taggable(tagSet) => base :+ ("tags" -> JsArray(
+          tagSet.map(tags => JsObject(tags.toList.map {
+            case (k, v) => k -> Json.toJson(v)
+          }))
+        ))
+
+        case _ => base
+      })
     }
 
-    val optionalFields = List[Option[(String, JsValueWrapper)]](
-      sortOption.map { "$orderby" -> _ },
-      hintOption.map { "$hint" -> _ },
-      maxTimeMsOption.map { "$maxTimeMS" -> _ },
-      commentString.map { "$comment" -> _ },
-      option(explainFlag, "$explain" -> true),
-      option(snapshotFlag, "$snapshot" -> true),
-      readPreferenceDocument.map { "$readPreference" -> _ }
+    val optional = List[Option[(String, JsValue)]](
+      queryOption.map { "$query" -> Json.toJson(_) },
+      sortOption.map { "$orderby" -> Json.toJson(_) },
+      hintOption.map { "$hint" -> Json.toJson(_) },
+      maxTimeMsOption.map { "$maxTimeMS" -> Json.toJson(_) },
+      commentString.map { "$comment" -> Json.toJson(_) },
+      option(explainFlag, "$explain" -> Json.toJson(true)),
+      option(snapshotFlag, "$snapshot" -> Json.toJson(true))
     ).flatten
 
-    val query = queryOption.getOrElse(empty)
-
-    if (optionalFields.isEmpty) query else {
-      val fs = ("$query" -> implicitly[JsValueWrapper](query)) :: optionalFields
-      Json.obj(fs: _*)
-    }
+    JsObject((optional :+ ("$readPreference" -> pref)))
   }
 }
 
