@@ -27,7 +27,7 @@ import play.api.libs.json.{
   JsUndefined,
   JsSuccess,
   Writes
-}, Json.JsValueWrapper
+}
 
 import reactivemongo.api.{
   Collection,
