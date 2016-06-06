@@ -3,6 +3,13 @@ scala:
 - 2.11.7
 jdk:
 - oraclejdk8
-before_install: sudo ./.travis_scripts/beforeInstall.sh
+sudo: false
+cache:
+  directories:
+  - $HOME/.ivy2
+  - $HOME/.sbt
+  - $HOME/ssl
+  - $HOME/mongodb-linux-x86_64-amazon-3.2.4
+before_install: ./.travis_scripts/beforeInstall.sh
 script: ./.travis_scripts/validate.sh
 after_success: ./.travis_scripts/afterSuccess.sh
