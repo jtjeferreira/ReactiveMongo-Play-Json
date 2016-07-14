@@ -24,7 +24,7 @@ To run the tests, use:
 
     sbt test
 
-[Travis](https://travis-ci.org/ReactiveMongo/Reactivemongo-Play-Json): [![Build Status](https://travis-ci.org/ReactiveMongo/Reactivemongo-Play-Json.svg?branch=master)](https://travis-ci.org/ReactiveMongo/Reactivemongo-Play-Json)
+[Travis](https://travis-ci.org/ReactiveMongo/ReactiveMongo-Play-Json): [![Build Status](https://travis-ci.org/ReactiveMongo/ReactiveMongo-Play-Json.svg?branch=master)](https://travis-ci.org/ReactiveMongo/ReactiveMongo-Play-Json)
 
 > As for [Play Framework](http://playframework.com/) 2.4, a JDK 1.8+ is required to build this plugin.
 
