@@ -14,7 +14,6 @@ git diff --exit-code || (
   false
 )
 
-
 # Sonatype staging (avoid Central sync delay)
 perl -pe "s|resolvers |resolvers += \"Sonatype Staging\" at \"https://oss.sonatype.org/content/repositories/staging/\"\n\r\nresolvers |" < "$SCRIPT_DIR/../build.sbt" > /tmp/build.sbt && mv /tmp/build.sbt "$SCRIPT_DIR/../build.sbt"
 
