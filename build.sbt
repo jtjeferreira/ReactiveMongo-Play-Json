@@ -25,13 +25,14 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-json" % "2.5.2" % "provided" cross CrossVersion.binary)
 
 // Test
+fork in Test := false
 
 testOptions in Test += Tests.Cleanup(cl => {
   import scala.language.reflectiveCalls
   val c = cl.loadClass("Common$")
-  type M = { def closeDriver(): Unit }
+  type M = { def close(): Unit }
   val m: M = c.getField("MODULE$").get(null).asInstanceOf[M]
-  m.closeDriver()
+  m.close()
 })
 
 libraryDependencies ++= Seq(
