@@ -74,8 +74,9 @@ lazy val publishSettings = {
 }
 
 // Scalariform
-
 import scalariform.formatter.preferences._
+import com.typesafe.sbt.SbtScalariform
+import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 
 scalariformSettings
 
@@ -95,6 +96,7 @@ ScalariformKeys.preferences := ScalariformKeys.preferences.value.
   setPreference(RewriteArrowSymbols, false).
   setPreference(SpaceBeforeColon, false).
   setPreference(SpaceInsideBrackets, false).
+  setPreference(SpacesAroundMultiImports, true).
   setPreference(SpacesWithinPatternBinders, true)
 
 lazy val root = (project in file(".")).
