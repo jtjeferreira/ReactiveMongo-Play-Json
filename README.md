@@ -6,13 +6,17 @@ This is a JSON serialization pack for [ReactiveMongo](http://reactivemongo.org),
 
 In your `project/Build.scala`:
 
-```scala
+```ocaml
 // only for Play 2.4.x
 libraryDependencies ++= Seq(
-  "org.reactivemongo" %% "reactivemongo-play-json" % "0.11.10")
+  "org.reactivemongo" %% "reactivemongo-play-json" % ReactiveMongoVer)
 ```
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.reactivemongo/reactivemongo-play-json_2.11/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.reactivemongo/reactivemongo-play-json_2.11/)
+
+The documentation is [available online](http://reactivemongo.org/releases/0.11/documentation/json/overview.html).
+
+> More [examples[src/test/scala/JSONCollectionSpec.scala]
 
 ## Build manually
 

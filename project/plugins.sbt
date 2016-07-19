@@ -1,5 +1,6 @@
 resolvers ++= Seq(
-  "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
-)
+  "Tatami Releases" at "https://raw.github.com/cchantep/tatami/master/releases")
 
 addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.4.0")
+
+addSbtPlugin("cchantep" % "sbt-hl-compiler" % "0.2")
