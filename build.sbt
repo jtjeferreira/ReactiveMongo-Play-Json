@@ -2,9 +2,9 @@ organization := "org.reactivemongo"
 
 name := "reactivemongo-play-json"
 
-val buildVersion = "0.12.0-SNAPSHOT"
+val buildVersion = "0.12-RC0"
 
-version := buildVersion
+version := s"$buildVersion-play24"
 
 scalaVersion := "2.11.8"
 
