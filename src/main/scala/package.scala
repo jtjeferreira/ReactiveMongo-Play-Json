@@ -436,13 +436,7 @@ object Writers {
 
 object JSONSerializationPack extends reactivemongo.api.SerializationPack {
   import scala.util.{ Failure, Success, Try }
-  import reactivemongo.bson.buffer.{
-    DefaultBufferHandler,
-    ReadableBuffer,
-    WritableBuffer
-  }
-
-  import reactivemongo.api.MongoDriver.logger
+  import reactivemongo.bson.buffer.{ ReadableBuffer, WritableBuffer }
 
   type Value = JsValue
   type ElementProducer = (String, Json.JsValueWrapper)

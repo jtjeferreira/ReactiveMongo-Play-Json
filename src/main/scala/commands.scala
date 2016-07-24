@@ -21,7 +21,6 @@ import play.api.libs.json.{
   JsNumber,
   JsObject,
   JsResult,
-  JsString,
   JsSuccess,
   JsValue,
   OWrites,
@@ -30,8 +29,6 @@ import play.api.libs.json.{
 
 import reactivemongo.api.ReadConcern
 import reactivemongo.api.commands.{ CommandError, UnitBox }
-
-import reactivemongo.play.json.JSONSerializationPack
 
 object CommonImplicits {
   implicit object UnitBoxReader

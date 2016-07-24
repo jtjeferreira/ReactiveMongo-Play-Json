@@ -30,7 +30,6 @@ object JSONFindAndModifyCommand
 
 object JSONFindAndModifyImplicits {
   import JSONFindAndModifyCommand._
-  import reactivemongo.utils.option
 
   implicit object FindAndModifyResultReader
       extends DealingWithGenericCommandErrorsReader[FindAndModifyResult] {
