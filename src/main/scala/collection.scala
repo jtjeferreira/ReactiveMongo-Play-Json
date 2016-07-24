@@ -21,13 +21,10 @@ import play.api.libs.json.{
   Json,
   JsArray,
   JsBoolean,
-  JsError,
   JsObject,
   JsPath,
-  JsUndefined,
-  JsSuccess,
   Writes
-}, Json.JsValueWrapper
+}
 
 import reactivemongo.api.{
   Collection,
@@ -62,24 +59,13 @@ object JSONBatchCommands
 
   import play.api.libs.json.{
     JsError,
-    JsNull,
     JsNumber,
     JsValue,
-    JsObject,
     JsString,
     JsResult,
-    JsSuccess,
-    Reads,
-    __
+    JsSuccess
   }
-  import reactivemongo.bson.{
-    BSONArray,
-    BSONDocument,
-    BSONDocumentWriter,
-    BSONObjectID,
-    BSONValue,
-    Producer
-  }
+  import reactivemongo.bson.BSONValue
   import reactivemongo.api.commands.{
     CountCommand => CC,
     DefaultWriteResult,
@@ -379,8 +365,6 @@ case class JSONCollection(
 )
     extends GenericCollection[JSONSerializationPack.type] with CollectionMetaCommands {
 
-  import reactivemongo.core.commands.GetLastError
-
   val pack = JSONSerializationPack
   val BatchCommands = JSONBatchCommands
 
@@ -497,7 +481,6 @@ case class JSONQueryBuilder(
 
 import reactivemongo.api.{
   Cursor,
-  CursorProducer,
   FlattenedCursor,
   WrappedCursor
 }
