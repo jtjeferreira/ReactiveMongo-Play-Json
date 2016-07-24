@@ -43,17 +43,14 @@ object JSONAggregationFramework
 object JSONAggregationImplicits {
   import play.api.libs.json.{
     JsArray,
-    JsError,
     JsObject,
     JsSuccess,
     JsValue,
-    Reads,
     OWrites
   }
   import reactivemongo.api.commands.{ ResolvedCollectionCommand, ResultCursor }
   import reactivemongo.core.protocol.MongoWireVersion
   import JSONAggregationFramework.{ Aggregate, AggregationResult }
-  import reactivemongo.play.json.BSONFormats
 
   implicit object AggregateWriter
       extends OWrites[ResolvedCollectionCommand[Aggregate]] {
