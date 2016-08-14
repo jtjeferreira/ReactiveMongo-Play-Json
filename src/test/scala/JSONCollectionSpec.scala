@@ -24,7 +24,7 @@ class JSONCollectionSpec extends org.specs2.mutable.Specification {
   implicit val userReads = Json.reads[User]
   implicit val userWrites = Json.writes[User]
 
-  lazy val collectionName = "reactivemongo_test_users"
+  lazy val collectionName = s"test_users_${System identityHashCode this}"
   lazy val bsonCollection = db(collectionName)
   lazy val collection = new JSONCollection(db, collectionName, new FailoverStrategy())
 
@@ -190,6 +190,24 @@ class JSONCollectionSpec extends org.specs2.mutable.Specification {
         cursor[JsValue]().collect[List](10).
         aka("cursor with max time") must throwA[DetailedDatabaseException].
         await(1, DurationInt(1).second)
+    }
+  }
+
+  "JSON documents" should {
+    import reactivemongo.play.json.collection.Helpers
+
+    val quiz = db[JSONCollection](s"quiz_${System identityHashCode this}")
+
+    "be imported" in { implicit ee: EE =>
+      def input = getClass.getResourceAsStream("/quiz.json")
+      val expected = List("""{"_id":1,"name":"dave123","quiz":1,"score":85}""", """{"_id":2,"name":"dave2","quiz":1,"score":90}""", """{"_id":3,"name":"ahn","quiz":1,"score":71}""", """{"_id":4,"name":"li","quiz":2,"score":96}""", """{"_id":5,"name":"annT","quiz":2,"score":77}""", """{"_id":6,"name":"ty","quiz":2,"score":82}""")
+
+      Helpers.bulkInsert(quiz, input).map(_.totalN).
+        aka("inserted") must beEqualTo(6).await(0, timeout) and {
+          quiz.find(Json.obj()).cursor[JsObject]().collect[List]().
+            map(_.map(Json.stringify).sorted) must beEqualTo(expected).
+            await(0, timeout)
+        }
     }
   }
 }
