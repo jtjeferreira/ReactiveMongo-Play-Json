@@ -358,12 +358,15 @@ object JSONBatchCommands
 }
 
 /**
- * A Collection that interacts with the Play JSON library, using `Reads` and `Writes`.
+ * A Collection that interacts with the Play JSON library,
+ * using `Reads` and `Writes`.
  */
-case class JSONCollection(
-  db: DB, name: String, failoverStrategy: FailoverStrategy
-)
-    extends GenericCollection[JSONSerializationPack.type] with CollectionMetaCommands {
+final class JSONCollection(
+  val db: DB,
+  val name: String,
+  val failoverStrategy: FailoverStrategy
+) extends GenericCollection[JSONSerializationPack.type]
+    with CollectionMetaCommands {
 
   val pack = JSONSerializationPack
   val BatchCommands = JSONBatchCommands
@@ -531,5 +534,63 @@ object JsCursor {
   implicit object cursorFlattener extends CursorFlattener[JsCursor] {
     def flatten[T](future: Future[JsCursor[T]]): JsCursor[T] =
       new JsFlattenedCursor(future)
+  }
+}
+
+/** Some JSON helpers. */
+object Helpers {
+  import java.io.InputStream
+  import play.api.libs.json.{ JsError, JsSuccess, OWrites }
+  import reactivemongo.api.commands.MultiBulkWriteResult
+
+  implicit val idWrites = OWrites[JsObject](identity[JsObject])
+
+  /**
+   * Inserts the documents from a JSON source.
+   *
+   * @param documents the source that can be parsed as an array of JSON objects
+   * @param ordered true if to insert the document in order
+   * @param bulkSize the maximum size for each insert bulk
+   * @param wc the write concern
+   */
+  def bulkInsert(collection: JSONCollection, documents: => InputStream, ordered: Boolean, bulkSize: Int, bulkByteSize: Int)(implicit ec: ExecutionContext, wc: WriteConcern): Future[MultiBulkWriteResult] =
+    documentProducer(collection, documents).flatMap { producer =>
+      collection.bulkInsert(ordered, wc, bulkSize, bulkByteSize)(producer: _*)
+    }
+
+  /**
+   * Inserts the documents from a JSON source.
+   *
+   * @param documents the source that can be parsed as an array of JSON objects
+   * @param ordered true if to insert the document in order
+   * @param wc the write concern
+   */
+  def bulkInsert(collection: JSONCollection, documents: => InputStream, ordered: Boolean = true)(implicit ec: ExecutionContext, wc: WriteConcern = collection.db.connection.options.writeConcern): Future[MultiBulkWriteResult] =
+    documentProducer(collection, documents).flatMap { producer =>
+      collection.bulkInsert(ordered, wc)(producer: _*)
+    }
+
+  private def documentProducer(collection: JSONCollection, documents: => InputStream)(implicit ec: ExecutionContext): Future[List[collection.ImplicitlyDocumentProducer]] = {
+    lazy val in = documents
+    def docs: Future[List[JsObject]] = try {
+      Json.parse(in).validate[List[JsObject]] match {
+        case JsSuccess(os, _) => Future.successful(os)
+        case err @ JsError(_) => Future.failed(new Exception(
+          Json.stringify(JsError toJson err)
+        ))
+      }
+    } catch {
+      case reason: Throwable => Future.failed(reason)
+    } finally {
+      try {
+        in.close()
+      } catch {
+        case _: Throwable => ()
+      }
+    }
+
+    docs.map {
+      _.map { implicitly[collection.ImplicitlyDocumentProducer](_) }
+    }
   }
 }
