@@ -10,7 +10,8 @@ scalaVersion := "2.11.8"
 
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-target:jvm-1.8")
 
-scalacOptions in (Compile, doc) := Seq("-Ywarn-unused-import", "-unchecked", "-deprecation")
+scalacOptions in (Compile, doc) := Seq(
+  "-Ywarn-dead-code", "-Ywarn-unused-import", "-unchecked", "-deprecation")
 
 crossScalaVersions := Seq(scalaVersion.value)
 
@@ -22,7 +23,7 @@ resolvers ++= Seq(
 
 libraryDependencies ++= Seq(
   "org.reactivemongo" %% "reactivemongo" % buildVersion % "provided" cross CrossVersion.binary,
-  "com.typesafe.play" %% "play-json" % "2.5.4" % "provided" cross CrossVersion.binary)
+  "com.typesafe.play" %% "play-json" % "2.5.5" % "provided" cross CrossVersion.binary)
 
 // Test
 fork in Test := false
