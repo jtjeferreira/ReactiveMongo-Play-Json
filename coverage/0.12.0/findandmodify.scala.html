@@ -1,0 +1,1469 @@
+<html>
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+        <title id="title">
+          findandmodify.scala.html
+        </title>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.20.1/css/theme.default.min.css" type="text/css"/><script src="http://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.20.1/js/jquery.tablesorter.min.js"></script><link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" type="text/css"/><script src="http://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script><script type="text/javascript">
+        $(document).ready(function() {$(".tablesorter").tablesorter();});
+      </script>
+        <style>
+          table.codegrid { font-family: monospace; font-size: 12px; width: auto!important; }table.statementlist { width: auto!important; font-size: 13px; } table.codegrid td { padding: 0!important; border: 0!important } table td.linenumber { width: 40px!important; } 
+        </style>
+      </head>
+      <body style="font-family: monospace;">
+        <ul class="nav nav-tabs">
+          <li>
+            <a href="#codegrid" data-toggle="tab">Codegrid</a>
+          </li>
+          <li>
+            <a href="#statementlist" data-toggle="tab">Statement List</a>
+          </li>
+        </ul>
+        <div class="tab-content">
+          <div class="tab-pane active" id="codegrid">
+            <pre style='font-size: 12pt; font-family: courier;'>1 <span style=''>/*
+</span>2 <span style=''> * Copyright 2012-2013 Stephane Godbillon (@sgodbillon)
+</span>3 <span style=''> *
+</span>4 <span style=''> * Licensed under the Apache License, Version 2.0 (the "License");
+</span>5 <span style=''> * you may not use this file except in compliance with the License.
+</span>6 <span style=''> * You may obtain a copy of the License at
+</span>7 <span style=''> *
+</span>8 <span style=''> *   http://www.apache.org/licenses/LICENSE-2.0
+</span>9 <span style=''> *
+</span>10 <span style=''> * Unless required by applicable law or agreed to in writing, software
+</span>11 <span style=''> * distributed under the License is distributed on an "AS IS" BASIS,
+</span>12 <span style=''> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+</span>13 <span style=''> * See the License for the specific language governing permissions and
+</span>14 <span style=''> * limitations under the License.
+</span>15 <span style=''> */
+</span>16 <span style=''>package reactivemongo.play.json.commands
+</span>17 <span style=''>
+</span>18 <span style=''>import play.api.libs.json.{ Json, JsObject, OWrites }, Json.JsValueWrapper
+</span>19 <span style=''>
+</span>20 <span style=''>import reactivemongo.api.commands.{
+</span>21 <span style=''>  FindAndModifyCommand,
+</span>22 <span style=''>  ResolvedCollectionCommand
+</span>23 <span style=''>}
+</span>24 <span style=''>import reactivemongo.play.json.JSONSerializationPack
+</span>25 <span style=''>
+</span>26 <span style=''>object JSONFindAndModifyCommand
+</span>27 <span style=''>    extends FindAndModifyCommand[JSONSerializationPack.type] {
+</span>28 <span style=''>  val pack: JSONSerializationPack.type = </span><span style='background: #AEF1AE'>JSONSerializationPack</span><span style=''>
+</span>29 <span style=''>}
+</span>30 <span style=''>
+</span>31 <span style=''>object JSONFindAndModifyImplicits {
+</span>32 <span style=''>  import JSONFindAndModifyCommand._
+</span>33 <span style=''>
+</span>34 <span style=''>  implicit object FindAndModifyResultReader
+</span>35 <span style=''>      extends DealingWithGenericCommandErrorsReader[FindAndModifyResult] {
+</span>36 <span style=''>
+</span>37 <span style=''>    def readResult(result: JsObject): FindAndModifyResult = try {
+</span>38 <span style=''>      </span><span style='background: #AEF1AE'>FindAndModifyResult(
+</span>39 <span style=''></span><span style='background: #AEF1AE'>        (result \ "lastErrorObject").asOpt[JsObject].map { doc =>
+</span>40 <span style=''></span><span style='background: #AEF1AE'>          UpdateLastError(
+</span>41 <span style=''></span><span style='background: #AEF1AE'>            updatedExisting = (doc \ "updatedExisting").
+</span>42 <span style=''></span><span style='background: #AEF1AE'>              asOpt[Boolean].getOrElse(false),
+</span>43 <span style=''></span><span style='background: #AEF1AE'>            n = (doc \ "n").asOpt[Int].getOrElse(0),
+</span>44 <span style=''></span><span style='background: #AEF1AE'>            err = (doc \ "err").asOpt[String],
+</span>45 <span style=''></span><span style='background: #AEF1AE'>            upsertedId = (doc \ "upserted").toOption
+</span>46 <span style=''></span><span style='background: #AEF1AE'>          )
+</span>47 <span style=''></span><span style='background: #AEF1AE'>        },
+</span>48 <span style=''></span><span style='background: #AEF1AE'>        (result \ "value").asOpt[JsObject]
+</span>49 <span style=''></span><span style='background: #AEF1AE'>      )</span><span style=''>
+</span>50 <span style=''>    } catch {
+</span>51 <span style=''>      case e: Throwable =>
+</span>52 <span style=''>        </span><span style='background: #F0ADAD'>e.printStackTrace()</span><span style=''>
+</span>53 <span style=''>        </span><span style='background: #F0ADAD'>sys.error("Error")</span><span style=''>
+</span>54 <span style=''>    }
+</span>55 <span style=''>  }
+</span>56 <span style=''>
+</span>57 <span style=''>  implicit object FindAndModifyWriter
+</span>58 <span style=''>      extends OWrites[ResolvedCollectionCommand[FindAndModify]] {
+</span>59 <span style=''>
+</span>60 <span style=''>    def writes(command: ResolvedCollectionCommand[FindAndModify]): JsObject = {
+</span>61 <span style=''>      val optionalFields = </span><span style='background: #AEF1AE'>List[Option[(String, JsValueWrapper)]](
+</span>62 <span style=''></span><span style='background: #AEF1AE'>        command.command.sort.map(</span><span style='background: #F0ADAD'>"sort" -> _</span><span style='background: #AEF1AE'>),
+</span>63 <span style=''></span><span style='background: #AEF1AE'>        command.command.fields.map(</span><span style='background: #F0ADAD'>"fields" -> _</span><span style='background: #AEF1AE'>)
+</span>64 <span style=''></span><span style='background: #AEF1AE'>      ).flatten</span><span style=''>
+</span>65 <span style=''>
+</span>66 <span style=''>      </span><span style='background: #AEF1AE'>Json.obj(
+</span>67 <span style=''></span><span style='background: #AEF1AE'>        "findAndModify" -> command.collection,
+</span>68 <span style=''></span><span style='background: #AEF1AE'>        "query" -> command.command.query
+</span>69 <span style=''></span><span style='background: #AEF1AE'>      ) ++
+</span>70 <span style=''></span><span style='background: #AEF1AE'>        Json.obj(optionalFields: _*) ++
+</span>71 <span style=''></span><span style='background: #AEF1AE'>        (command.command.modify match {
+</span>72 <span style=''></span><span style='background: #AEF1AE'>          case Update(document, fetchNewObject, upsert) => Json.obj(
+</span>73 <span style=''></span><span style='background: #AEF1AE'>            "update" -> document,
+</span>74 <span style=''></span><span style='background: #AEF1AE'>            "new" -> fetchNewObject,
+</span>75 <span style=''></span><span style='background: #AEF1AE'>            "upsert" -> upsert
+</span>76 <span style=''></span><span style='background: #AEF1AE'>          )
+</span>77 <span style=''></span><span style='background: #AEF1AE'>
+</span>78 <span style=''></span><span style='background: #AEF1AE'>          case Remove => </span><span style='background: #F0ADAD'>Json.obj("remove" -> true)</span><span style='background: #AEF1AE'>
+</span>79 <span style=''></span><span style='background: #AEF1AE'>        })</span><span style=''>
+</span>80 <span style=''>    }
+</span>81 <span style=''>  }
+</span>82 <span style=''>}
+</span></pre>
+          </div>
+          <div class="tab-pane" id="statementlist">
+            <table cellspacing="0" cellpadding="0" class="table statementlist">
+      <tr>
+        <th>Line</th>
+        <th>Stmt Id</th>
+        <th>Pos</th>
+        <th>Tree</th>
+        <th>Symbol</th>
+        <th>Code</th>
+      </tr><tr>
+        <td>
+          28
+        </td>
+        <td>
+          645
+        </td>
+        <td>
+          1017
+          -
+          1038
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          reactivemongo.play.json.JSONSerializationPack
+        </td>
+        <td style="background: #AEF1AE">
+          reactivemongo.play.json.JSONSerializationPack
+        </td>
+      </tr><tr>
+        <td>
+          38
+        </td>
+        <td>
+          660
+        </td>
+        <td>
+          1307
+          -
+          1751
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          reactivemongo.api.commands.FindAndModifyCommand.FindAndModifyResult.apply
+        </td>
+        <td style="background: #AEF1AE">
+          JSONFindAndModifyCommand.FindAndModifyResult.apply(json.this.JsValue.jsValueToJsLookup(result).\(&quot;lastErrorObject&quot;).asOpt[play.api.libs.json.JsObject](json.this.Reads.JsObjectReads).map[reactivemongo.play.json.commands.JSONFindAndModifyCommand.UpdateLastError](((doc: play.api.libs.json.JsObject) =&gt; {
+  &lt;artifact&gt; val x$3: Boolean = json.this.JsValue.jsValueToJsLookup(doc).\(&quot;updatedExisting&quot;).asOpt[Boolean](json.this.Reads.BooleanReads).getOrElse[Boolean](false);
+  &lt;artifact&gt; val x$4: Int = json.this.JsValue.jsValueToJsLookup(doc).\(&quot;n&quot;).asOpt[Int](json.this.Reads.IntReads).getOrElse[Int](0);
+  &lt;artifact&gt; val x$5: Option[String] @scala.reflect.internal.annotations.uncheckedBounds = json.this.JsValue.jsValueToJsLookup(doc).\(&quot;err&quot;).asOpt[String](json.this.Reads.StringReads);
+  &lt;artifact&gt; val x$6: Option[play.api.libs.json.JsValue] @scala.reflect.internal.annotations.uncheckedBounds = json.this.JsValue.jsValueToJsLookup(doc).\(&quot;upserted&quot;).toOption;
+  JSONFindAndModifyCommand.UpdateLastError.apply(x$3, x$6, x$4, x$5)
+})), json.this.JsValue.jsValueToJsLookup(result).\(&quot;value&quot;).asOpt[play.api.libs.json.JsObject](json.this.Reads.JsObjectReads))
+        </td>
+      </tr><tr>
+        <td>
+          38
+        </td>
+        <td>
+          661
+        </td>
+        <td>
+          1307
+          -
+          1751
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          reactivemongo.api.commands.FindAndModifyCommand.FindAndModifyResult.apply
+        </td>
+        <td style="background: #AEF1AE">
+          JSONFindAndModifyCommand.FindAndModifyResult.apply(json.this.JsValue.jsValueToJsLookup(result).\(&quot;lastErrorObject&quot;).asOpt[play.api.libs.json.JsObject](json.this.Reads.JsObjectReads).map[reactivemongo.play.json.commands.JSONFindAndModifyCommand.UpdateLastError](((doc: play.api.libs.json.JsObject) =&gt; {
+  &lt;artifact&gt; val x$3: Boolean = json.this.JsValue.jsValueToJsLookup(doc).\(&quot;updatedExisting&quot;).asOpt[Boolean](json.this.Reads.BooleanReads).getOrElse[Boolean](false);
+  &lt;artifact&gt; val x$4: Int = json.this.JsValue.jsValueToJsLookup(doc).\(&quot;n&quot;).asOpt[Int](json.this.Reads.IntReads).getOrElse[Int](0);
+  &lt;artifact&gt; val x$5: Option[String] @scala.reflect.internal.annotations.uncheckedBounds = json.this.JsValue.jsValueToJsLookup(doc).\(&quot;err&quot;).asOpt[String](json.this.Reads.StringReads);
+  &lt;artifact&gt; val x$6: Option[play.api.libs.json.JsValue] @scala.reflect.internal.annotations.uncheckedBounds = json.this.JsValue.jsValueToJsLookup(doc).\(&quot;upserted&quot;).toOption;
+  JSONFindAndModifyCommand.UpdateLastError.apply(x$3, x$6, x$4, x$5)
+})), json.this.JsValue.jsValueToJsLookup(result).\(&quot;value&quot;).asOpt[play.api.libs.json.JsObject](json.this.Reads.JsObjectReads))
+        </td>
+      </tr><tr>
+        <td>
+          39
+        </td>
+        <td>
+          647
+        </td>
+        <td>
+          1370
+          -
+          1370
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultReads.JsObjectReads
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Reads.JsObjectReads
+        </td>
+      </tr><tr>
+        <td>
+          39
+        </td>
+        <td>
+          656
+        </td>
+        <td>
+          1337
+          -
+          1699
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Option.map
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.JsValue.jsValueToJsLookup(result).\(&quot;lastErrorObject&quot;).asOpt[play.api.libs.json.JsObject](json.this.Reads.JsObjectReads).map[reactivemongo.play.json.commands.JSONFindAndModifyCommand.UpdateLastError](((doc: play.api.libs.json.JsObject) =&gt; {
+  &lt;artifact&gt; val x$3: Boolean = json.this.JsValue.jsValueToJsLookup(doc).\(&quot;updatedExisting&quot;).asOpt[Boolean](json.this.Reads.BooleanReads).getOrElse[Boolean](false);
+  &lt;artifact&gt; val x$4: Int = json.this.JsValue.jsValueToJsLookup(doc).\(&quot;n&quot;).asOpt[Int](json.this.Reads.IntReads).getOrElse[Int](0);
+  &lt;artifact&gt; val x$5: Option[String] @scala.reflect.internal.annotations.uncheckedBounds = json.this.JsValue.jsValueToJsLookup(doc).\(&quot;err&quot;).asOpt[String](json.this.Reads.StringReads);
+  &lt;artifact&gt; val x$6: Option[play.api.libs.json.JsValue] @scala.reflect.internal.annotations.uncheckedBounds = json.this.JsValue.jsValueToJsLookup(doc).\(&quot;upserted&quot;).toOption;
+  JSONFindAndModifyCommand.UpdateLastError.apply(x$3, x$6, x$4, x$5)
+}))
+        </td>
+      </tr><tr>
+        <td>
+          39
+        </td>
+        <td>
+          646
+        </td>
+        <td>
+          1346
+          -
+          1363
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;lastErrorObject&quot;
+        </td>
+      </tr><tr>
+        <td>
+          40
+        </td>
+        <td>
+          655
+        </td>
+        <td>
+          1404
+          -
+          1689
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          reactivemongo.api.commands.FindAndModifyCommand.UpdateLastError.apply
+        </td>
+        <td style="background: #AEF1AE">
+          JSONFindAndModifyCommand.UpdateLastError.apply(x$3, x$6, x$4, x$5)
+        </td>
+      </tr><tr>
+        <td>
+          42
+        </td>
+        <td>
+          648
+        </td>
+        <td>
+          1452
+          -
+          1523
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Option.getOrElse
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.JsValue.jsValueToJsLookup(doc).\(&quot;updatedExisting&quot;).asOpt[Boolean](json.this.Reads.BooleanReads).getOrElse[Boolean](false)
+        </td>
+      </tr><tr>
+        <td>
+          43
+        </td>
+        <td>
+          649
+        </td>
+        <td>
+          1542
+          -
+          1576
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Option.getOrElse
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.JsValue.jsValueToJsLookup(doc).\(&quot;n&quot;).asOpt[Int](json.this.Reads.IntReads).getOrElse[Int](0)
+        </td>
+      </tr><tr>
+        <td>
+          44
+        </td>
+        <td>
+          651
+        </td>
+        <td>
+          1615
+          -
+          1615
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultReads.StringReads
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Reads.StringReads
+        </td>
+      </tr><tr>
+        <td>
+          44
+        </td>
+        <td>
+          650
+        </td>
+        <td>
+          1603
+          -
+          1608
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;err&quot;
+        </td>
+      </tr><tr>
+        <td>
+          44
+        </td>
+        <td>
+          652
+        </td>
+        <td>
+          1597
+          -
+          1623
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          play.api.libs.json.JsReadable.asOpt
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.JsValue.jsValueToJsLookup(doc).\(&quot;err&quot;).asOpt[String](json.this.Reads.StringReads)
+        </td>
+      </tr><tr>
+        <td>
+          45
+        </td>
+        <td>
+          654
+        </td>
+        <td>
+          1651
+          -
+          1677
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.JsLookupResult.toOption
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.JsValue.jsValueToJsLookup(doc).\(&quot;upserted&quot;).toOption
+        </td>
+      </tr><tr>
+        <td>
+          45
+        </td>
+        <td>
+          653
+        </td>
+        <td>
+          1657
+          -
+          1667
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;upserted&quot;
+        </td>
+      </tr><tr>
+        <td>
+          48
+        </td>
+        <td>
+          657
+        </td>
+        <td>
+          1719
+          -
+          1726
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;value&quot;
+        </td>
+      </tr><tr>
+        <td>
+          48
+        </td>
+        <td>
+          659
+        </td>
+        <td>
+          1710
+          -
+          1743
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          play.api.libs.json.JsReadable.asOpt
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.JsValue.jsValueToJsLookup(result).\(&quot;value&quot;).asOpt[play.api.libs.json.JsObject](json.this.Reads.JsObjectReads)
+        </td>
+      </tr><tr>
+        <td>
+          48
+        </td>
+        <td>
+          658
+        </td>
+        <td>
+          1733
+          -
+          1733
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultReads.JsObjectReads
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Reads.JsObjectReads
+        </td>
+      </tr><tr>
+        <td>
+          52
+        </td>
+        <td>
+          662
+        </td>
+        <td>
+          1801
+          -
+          1820
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          java.lang.Throwable.printStackTrace
+        </td>
+        <td style="background: #F0ADAD">
+          e.printStackTrace()
+        </td>
+      </tr><tr>
+        <td>
+          53
+        </td>
+        <td>
+          663
+        </td>
+        <td>
+          1829
+          -
+          1847
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.sys.error
+        </td>
+        <td style="background: #F0ADAD">
+          scala.sys.`package`.error(&quot;Error&quot;)
+        </td>
+      </tr><tr>
+        <td>
+          62
+        </td>
+        <td>
+          666
+        </td>
+        <td>
+          2154
+          -
+          2155
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          play.api.libs.json.Json.toJsFieldJsValueWrapper
+        </td>
+        <td style="background: #F0ADAD">
+          json.this.Json.toJsFieldJsValueWrapper[reactivemongo.play.json.commands.JSONFindAndModifyCommand.pack.Document](x$1)(json.this.Writes.JsValueWrites)
+        </td>
+      </tr><tr>
+        <td>
+          62
+        </td>
+        <td>
+          668
+        </td>
+        <td>
+          2119
+          -
+          2156
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Option.map
+        </td>
+        <td style="background: #AEF1AE">
+          command.command.sort.map[(String, play.api.libs.json.Json.JsValueWrapper)](((x$1: reactivemongo.play.json.commands.JSONFindAndModifyCommand.pack.Document) =&gt; scala.this.Predef.ArrowAssoc[String](&quot;sort&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[reactivemongo.play.json.commands.JSONFindAndModifyCommand.pack.Document](x$1)(json.this.Writes.JsValueWrites))))
+        </td>
+      </tr><tr>
+        <td>
+          62
+        </td>
+        <td>
+          665
+        </td>
+        <td>
+          2154
+          -
+          2154
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultWrites.JsValueWrites
+        </td>
+        <td style="background: #F0ADAD">
+          json.this.Writes.JsValueWrites
+        </td>
+      </tr><tr>
+        <td>
+          62
+        </td>
+        <td>
+          664
+        </td>
+        <td>
+          2144
+          -
+          2150
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #F0ADAD">
+          &quot;sort&quot;
+        </td>
+      </tr><tr>
+        <td>
+          62
+        </td>
+        <td>
+          667
+        </td>
+        <td>
+          2144
+          -
+          2155
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Predef.ArrowAssoc.-&gt;
+        </td>
+        <td style="background: #F0ADAD">
+          scala.this.Predef.ArrowAssoc[String](&quot;sort&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[reactivemongo.play.json.commands.JSONFindAndModifyCommand.pack.Document](x$1)(json.this.Writes.JsValueWrites))
+        </td>
+      </tr><tr>
+        <td>
+          63
+        </td>
+        <td>
+          669
+        </td>
+        <td>
+          2193
+          -
+          2201
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #F0ADAD">
+          &quot;fields&quot;
+        </td>
+      </tr><tr>
+        <td>
+          63
+        </td>
+        <td>
+          672
+        </td>
+        <td>
+          2193
+          -
+          2206
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Predef.ArrowAssoc.-&gt;
+        </td>
+        <td style="background: #F0ADAD">
+          scala.this.Predef.ArrowAssoc[String](&quot;fields&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[reactivemongo.play.json.commands.JSONFindAndModifyCommand.pack.Document](x$2)(json.this.Writes.JsValueWrites))
+        </td>
+      </tr><tr>
+        <td>
+          63
+        </td>
+        <td>
+          671
+        </td>
+        <td>
+          2205
+          -
+          2206
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          play.api.libs.json.Json.toJsFieldJsValueWrapper
+        </td>
+        <td style="background: #F0ADAD">
+          json.this.Json.toJsFieldJsValueWrapper[reactivemongo.play.json.commands.JSONFindAndModifyCommand.pack.Document](x$2)(json.this.Writes.JsValueWrites)
+        </td>
+      </tr><tr>
+        <td>
+          63
+        </td>
+        <td>
+          673
+        </td>
+        <td>
+          2166
+          -
+          2207
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Option.map
+        </td>
+        <td style="background: #AEF1AE">
+          command.command.fields.map[(String, play.api.libs.json.Json.JsValueWrapper)](((x$2: reactivemongo.play.json.commands.JSONFindAndModifyCommand.pack.Document) =&gt; scala.this.Predef.ArrowAssoc[String](&quot;fields&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[reactivemongo.play.json.commands.JSONFindAndModifyCommand.pack.Document](x$2)(json.this.Writes.JsValueWrites))))
+        </td>
+      </tr><tr>
+        <td>
+          63
+        </td>
+        <td>
+          670
+        </td>
+        <td>
+          2205
+          -
+          2205
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultWrites.JsValueWrites
+        </td>
+        <td style="background: #F0ADAD">
+          json.this.Writes.JsValueWrites
+        </td>
+      </tr><tr>
+        <td>
+          64
+        </td>
+        <td>
+          675
+        </td>
+        <td>
+          2071
+          -
+          2223
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          scala.collection.generic.GenericTraversableTemplate.flatten
+        </td>
+        <td style="background: #AEF1AE">
+          immutable.this.List.apply[Option[(String, play.api.libs.json.Json.JsValueWrapper)]](command.command.sort.map[(String, play.api.libs.json.Json.JsValueWrapper)](((x$1: reactivemongo.play.json.commands.JSONFindAndModifyCommand.pack.Document) =&gt; scala.this.Predef.ArrowAssoc[String](&quot;sort&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[reactivemongo.play.json.commands.JSONFindAndModifyCommand.pack.Document](x$1)(json.this.Writes.JsValueWrites)))), command.command.fields.map[(String, play.api.libs.json.Json.JsValueWrapper)](((x$2: reactivemongo.play.json.commands.JSONFindAndModifyCommand.pack.Document) =&gt; scala.this.Predef.ArrowAssoc[String](&quot;fields&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[reactivemongo.play.json.commands.JSONFindAndModifyCommand.pack.Document](x$2)(json.this.Writes.JsValueWrites))))).flatten[(String, play.api.libs.json.Json.JsValueWrapper)]({
+  ((xo: Option[(String, play.api.libs.json.Json.JsValueWrapper)]) =&gt; scala.this.Option.option2Iterable[(String, play.api.libs.json.Json.JsValueWrapper)](xo))
+})
+        </td>
+      </tr><tr>
+        <td>
+          64
+        </td>
+        <td>
+          674
+        </td>
+        <td>
+          2216
+          -
+          2216
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Option.option2Iterable
+        </td>
+        <td style="background: #AEF1AE">
+          scala.this.Option.option2Iterable[(String, play.api.libs.json.Json.JsValueWrapper)](xo)
+        </td>
+      </tr><tr>
+        <td>
+          67
+        </td>
+        <td>
+          678
+        </td>
+        <td>
+          2276
+          -
+          2276
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultWrites.StringWrites
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Writes.StringWrites
+        </td>
+      </tr><tr>
+        <td>
+          67
+        </td>
+        <td>
+          677
+        </td>
+        <td>
+          2268
+          -
+          2286
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          reactivemongo.api.commands.ResolvedCollectionCommand.collection
+        </td>
+        <td style="background: #AEF1AE">
+          command.collection
+        </td>
+      </tr><tr>
+        <td>
+          67
+        </td>
+        <td>
+          680
+        </td>
+        <td>
+          2249
+          -
+          2286
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Predef.ArrowAssoc.-&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          scala.this.Predef.ArrowAssoc[String](&quot;findAndModify&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[String](command.collection)(json.this.Writes.StringWrites))
+        </td>
+      </tr><tr>
+        <td>
+          67
+        </td>
+        <td>
+          676
+        </td>
+        <td>
+          2249
+          -
+          2264
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;findAndModify&quot;
+        </td>
+      </tr><tr>
+        <td>
+          67
+        </td>
+        <td>
+          679
+        </td>
+        <td>
+          2268
+          -
+          2286
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          play.api.libs.json.Json.toJsFieldJsValueWrapper
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Json.toJsFieldJsValueWrapper[String](command.collection)(json.this.Writes.StringWrites)
+        </td>
+      </tr><tr>
+        <td>
+          68
+        </td>
+        <td>
+          681
+        </td>
+        <td>
+          2296
+          -
+          2303
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;query&quot;
+        </td>
+      </tr><tr>
+        <td>
+          68
+        </td>
+        <td>
+          684
+        </td>
+        <td>
+          2307
+          -
+          2328
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          play.api.libs.json.Json.toJsFieldJsValueWrapper
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Json.toJsFieldJsValueWrapper[reactivemongo.play.json.commands.JSONFindAndModifyCommand.pack.Document](command.command.query)(json.this.Writes.JsValueWrites)
+        </td>
+      </tr><tr>
+        <td>
+          68
+        </td>
+        <td>
+          683
+        </td>
+        <td>
+          2323
+          -
+          2323
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultWrites.JsValueWrites
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Writes.JsValueWrites
+        </td>
+      </tr><tr>
+        <td>
+          68
+        </td>
+        <td>
+          682
+        </td>
+        <td>
+          2307
+          -
+          2328
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          reactivemongo.api.commands.FindAndModifyCommand.FindAndModify.query
+        </td>
+        <td style="background: #AEF1AE">
+          command.command.query
+        </td>
+      </tr><tr>
+        <td>
+          68
+        </td>
+        <td>
+          685
+        </td>
+        <td>
+          2296
+          -
+          2328
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Predef.ArrowAssoc.-&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          scala.this.Predef.ArrowAssoc[String](&quot;query&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[reactivemongo.play.json.commands.JSONFindAndModifyCommand.pack.Document](command.command.query)(json.this.Writes.JsValueWrites))
+        </td>
+      </tr><tr>
+        <td>
+          70
+        </td>
+        <td>
+          686
+        </td>
+        <td>
+          2348
+          -
+          2376
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          play.api.libs.json.Json.obj
+        </td>
+        <td style="background: #AEF1AE">
+          play.api.libs.json.Json.obj((optionalFields: _*))
+        </td>
+      </tr><tr>
+        <td>
+          70
+        </td>
+        <td>
+          707
+        </td>
+        <td>
+          2231
+          -
+          2666
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          play.api.libs.json.JsObject.++
+        </td>
+        <td style="background: #AEF1AE">
+          play.api.libs.json.Json.obj(scala.this.Predef.ArrowAssoc[String](&quot;findAndModify&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[String](command.collection)(json.this.Writes.StringWrites)), scala.this.Predef.ArrowAssoc[String](&quot;query&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[reactivemongo.play.json.commands.JSONFindAndModifyCommand.pack.Document](command.command.query)(json.this.Writes.JsValueWrites))).++(play.api.libs.json.Json.obj((optionalFields: _*))).++(command.command.modify match {
+  case (update: reactivemongo.play.json.commands.JSONFindAndModifyCommand.pack.Document, fetchNewObject: Boolean, upsert: Boolean)reactivemongo.play.json.commands.JSONFindAndModifyCommand.Update((document @ _), (fetchNewObject @ _), (upsert @ _)) =&gt; play.api.libs.json.Json.obj(scala.this.Predef.ArrowAssoc[String](&quot;update&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[reactivemongo.play.json.commands.JSONFindAndModifyCommand.pack.Document](document)(json.this.Writes.JsValueWrites)), scala.this.Predef.ArrowAssoc[String](&quot;new&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[Boolean](fetchNewObject)(json.this.Writes.BooleanWrites)), scala.this.Predef.ArrowAssoc[String](&quot;upsert&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[Boolean](upsert)(json.this.Writes.BooleanWrites)))
+  case JSONFindAndModifyCommand.Remove =&gt; play.api.libs.json.Json.obj(scala.this.Predef.ArrowAssoc[String](&quot;remove&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[Boolean](true)(json.this.Writes.BooleanWrites)))
+})
+        </td>
+      </tr><tr>
+        <td>
+          71
+        </td>
+        <td>
+          687
+        </td>
+        <td>
+          2389
+          -
+          2411
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          reactivemongo.api.commands.FindAndModifyCommand.FindAndModify.modify
+        </td>
+        <td style="background: #AEF1AE">
+          command.command.modify
+        </td>
+      </tr><tr>
+        <td>
+          72
+        </td>
+        <td>
+          700
+        </td>
+        <td>
+          2479
+          -
+          2602
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          play.api.libs.json.Json.obj
+        </td>
+        <td style="background: #AEF1AE">
+          play.api.libs.json.Json.obj(scala.this.Predef.ArrowAssoc[String](&quot;update&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[reactivemongo.play.json.commands.JSONFindAndModifyCommand.pack.Document](document)(json.this.Writes.JsValueWrites)), scala.this.Predef.ArrowAssoc[String](&quot;new&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[Boolean](fetchNewObject)(json.this.Writes.BooleanWrites)), scala.this.Predef.ArrowAssoc[String](&quot;upsert&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[Boolean](upsert)(json.this.Writes.BooleanWrites)))
+        </td>
+      </tr><tr>
+        <td>
+          73
+        </td>
+        <td>
+          690
+        </td>
+        <td>
+          2513
+          -
+          2521
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          play.api.libs.json.Json.toJsFieldJsValueWrapper
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Json.toJsFieldJsValueWrapper[reactivemongo.play.json.commands.JSONFindAndModifyCommand.pack.Document](document)(json.this.Writes.JsValueWrites)
+        </td>
+      </tr><tr>
+        <td>
+          73
+        </td>
+        <td>
+          689
+        </td>
+        <td>
+          2513
+          -
+          2513
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultWrites.JsValueWrites
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Writes.JsValueWrites
+        </td>
+      </tr><tr>
+        <td>
+          73
+        </td>
+        <td>
+          691
+        </td>
+        <td>
+          2501
+          -
+          2521
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Predef.ArrowAssoc.-&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          scala.this.Predef.ArrowAssoc[String](&quot;update&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[reactivemongo.play.json.commands.JSONFindAndModifyCommand.pack.Document](document)(json.this.Writes.JsValueWrites))
+        </td>
+      </tr><tr>
+        <td>
+          73
+        </td>
+        <td>
+          688
+        </td>
+        <td>
+          2501
+          -
+          2509
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;update&quot;
+        </td>
+      </tr><tr>
+        <td>
+          74
+        </td>
+        <td>
+          693
+        </td>
+        <td>
+          2544
+          -
+          2544
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultWrites.BooleanWrites
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Writes.BooleanWrites
+        </td>
+      </tr><tr>
+        <td>
+          74
+        </td>
+        <td>
+          692
+        </td>
+        <td>
+          2535
+          -
+          2540
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;new&quot;
+        </td>
+      </tr><tr>
+        <td>
+          74
+        </td>
+        <td>
+          695
+        </td>
+        <td>
+          2535
+          -
+          2558
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Predef.ArrowAssoc.-&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          scala.this.Predef.ArrowAssoc[String](&quot;new&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[Boolean](fetchNewObject)(json.this.Writes.BooleanWrites))
+        </td>
+      </tr><tr>
+        <td>
+          74
+        </td>
+        <td>
+          694
+        </td>
+        <td>
+          2544
+          -
+          2558
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          play.api.libs.json.Json.toJsFieldJsValueWrapper
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Json.toJsFieldJsValueWrapper[Boolean](fetchNewObject)(json.this.Writes.BooleanWrites)
+        </td>
+      </tr><tr>
+        <td>
+          75
+        </td>
+        <td>
+          696
+        </td>
+        <td>
+          2572
+          -
+          2580
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;upsert&quot;
+        </td>
+      </tr><tr>
+        <td>
+          75
+        </td>
+        <td>
+          699
+        </td>
+        <td>
+          2572
+          -
+          2590
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Predef.ArrowAssoc.-&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          scala.this.Predef.ArrowAssoc[String](&quot;upsert&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[Boolean](upsert)(json.this.Writes.BooleanWrites))
+        </td>
+      </tr><tr>
+        <td>
+          75
+        </td>
+        <td>
+          698
+        </td>
+        <td>
+          2584
+          -
+          2590
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          play.api.libs.json.Json.toJsFieldJsValueWrapper
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Json.toJsFieldJsValueWrapper[Boolean](upsert)(json.this.Writes.BooleanWrites)
+        </td>
+      </tr><tr>
+        <td>
+          75
+        </td>
+        <td>
+          697
+        </td>
+        <td>
+          2584
+          -
+          2584
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultWrites.BooleanWrites
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Writes.BooleanWrites
+        </td>
+      </tr><tr>
+        <td>
+          78
+        </td>
+        <td>
+          705
+        </td>
+        <td>
+          2638
+          -
+          2654
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Predef.ArrowAssoc.-&gt;
+        </td>
+        <td style="background: #F0ADAD">
+          scala.this.Predef.ArrowAssoc[String](&quot;remove&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[Boolean](true)(json.this.Writes.BooleanWrites))
+        </td>
+      </tr><tr>
+        <td>
+          78
+        </td>
+        <td>
+          702
+        </td>
+        <td>
+          2650
+          -
+          2654
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #F0ADAD">
+          true
+        </td>
+      </tr><tr>
+        <td>
+          78
+        </td>
+        <td>
+          701
+        </td>
+        <td>
+          2638
+          -
+          2646
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #F0ADAD">
+          &quot;remove&quot;
+        </td>
+      </tr><tr>
+        <td>
+          78
+        </td>
+        <td>
+          704
+        </td>
+        <td>
+          2650
+          -
+          2654
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          play.api.libs.json.Json.toJsFieldJsValueWrapper
+        </td>
+        <td style="background: #F0ADAD">
+          json.this.Json.toJsFieldJsValueWrapper[Boolean](true)(json.this.Writes.BooleanWrites)
+        </td>
+      </tr><tr>
+        <td>
+          78
+        </td>
+        <td>
+          706
+        </td>
+        <td>
+          2629
+          -
+          2655
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          play.api.libs.json.Json.obj
+        </td>
+        <td style="background: #F0ADAD">
+          play.api.libs.json.Json.obj(scala.this.Predef.ArrowAssoc[String](&quot;remove&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[Boolean](true)(json.this.Writes.BooleanWrites)))
+        </td>
+      </tr><tr>
+        <td>
+          78
+        </td>
+        <td>
+          703
+        </td>
+        <td>
+          2650
+          -
+          2650
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultWrites.BooleanWrites
+        </td>
+        <td style="background: #F0ADAD">
+          json.this.Writes.BooleanWrites
+        </td>
+      </tr>
+    </table>
+          </div>
+        </div>
+      </body>
+    </html>

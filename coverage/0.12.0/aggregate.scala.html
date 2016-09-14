@@ -1,0 +1,2339 @@
+<html>
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+        <title id="title">
+          aggregate.scala.html
+        </title>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.20.1/css/theme.default.min.css" type="text/css"/><script src="http://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.20.1/js/jquery.tablesorter.min.js"></script><link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" type="text/css"/><script src="http://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script><script type="text/javascript">
+        $(document).ready(function() {$(".tablesorter").tablesorter();});
+      </script>
+        <style>
+          table.codegrid { font-family: monospace; font-size: 12px; width: auto!important; }table.statementlist { width: auto!important; font-size: 13px; } table.codegrid td { padding: 0!important; border: 0!important } table td.linenumber { width: 40px!important; } 
+        </style>
+      </head>
+      <body style="font-family: monospace;">
+        <ul class="nav nav-tabs">
+          <li>
+            <a href="#codegrid" data-toggle="tab">Codegrid</a>
+          </li>
+          <li>
+            <a href="#statementlist" data-toggle="tab">Statement List</a>
+          </li>
+        </ul>
+        <div class="tab-content">
+          <div class="tab-pane active" id="codegrid">
+            <pre style='font-size: 12pt; font-family: courier;'>1 <span style=''>/*
+</span>2 <span style=''> * Copyright 2012-2013 Stephane Godbillon (@sgodbillon)
+</span>3 <span style=''> *
+</span>4 <span style=''> * Licensed under the Apache License, Version 2.0 (the "License");
+</span>5 <span style=''> * you may not use this file except in compliance with the License.
+</span>6 <span style=''> * You may obtain a copy of the License at
+</span>7 <span style=''> *
+</span>8 <span style=''> *   http://www.apache.org/licenses/LICENSE-2.0
+</span>9 <span style=''> *
+</span>10 <span style=''> * Unless required by applicable law or agreed to in writing, software
+</span>11 <span style=''> * distributed under the License is distributed on an "AS IS" BASIS,
+</span>12 <span style=''> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+</span>13 <span style=''> * See the License for the specific language governing permissions and
+</span>14 <span style=''> * limitations under the License.
+</span>15 <span style=''> */
+</span>16 <span style=''>package reactivemongo.play.json.commands
+</span>17 <span style=''>
+</span>18 <span style=''>import play.api.libs.json.{ JsValue, Json }, Json.toJson
+</span>19 <span style=''>
+</span>20 <span style=''>import reactivemongo.api.commands.AggregationFramework
+</span>21 <span style=''>import reactivemongo.play.json.JSONSerializationPack
+</span>22 <span style=''>
+</span>23 <span style=''>object JSONAggregationFramework
+</span>24 <span style=''>    extends AggregationFramework[JSONSerializationPack.type] {
+</span>25 <span style=''>
+</span>26 <span style=''>  import Json.JsValueWrapper
+</span>27 <span style=''>
+</span>28 <span style=''>  val pack: JSONSerializationPack.type = </span><span style='background: #AEF1AE'>JSONSerializationPack</span><span style=''>
+</span>29 <span style=''>
+</span>30 <span style=''>  protected def makeDocument(elements: Seq[(String, JsValueWrapper)]) =
+</span>31 <span style=''>    </span><span style='background: #AEF1AE'>Json.obj(elements: _*)</span><span style=''>
+</span>32 <span style=''>
+</span>33 <span style=''>  protected def elementProducer(name: String, value: JsValue) =
+</span>34 <span style=''>    </span><span style='background: #AEF1AE'>name -> value</span><span style=''>
+</span>35 <span style=''>
+</span>36 <span style=''>  protected def booleanValue(b: Boolean): JsValue = </span><span style='background: #F0ADAD'>toJson(b)</span><span style=''>
+</span>37 <span style=''>  protected def intValue(i: Int): JsValue = </span><span style='background: #AEF1AE'>toJson(i)</span><span style=''>
+</span>38 <span style=''>  protected def longValue(l: Long): JsValue = </span><span style='background: #F0ADAD'>toJson(l)</span><span style=''>
+</span>39 <span style=''>  protected def doubleValue(d: Double): JsValue = </span><span style='background: #F0ADAD'>toJson(d)</span><span style=''>
+</span>40 <span style=''>  protected def stringValue(s: String): JsValue = </span><span style='background: #AEF1AE'>toJson(s)</span><span style=''>
+</span>41 <span style=''>}
+</span>42 <span style=''>
+</span>43 <span style=''>object JSONAggregationImplicits {
+</span>44 <span style=''>  import play.api.libs.json.{
+</span>45 <span style=''>    JsArray,
+</span>46 <span style=''>    JsObject,
+</span>47 <span style=''>    JsSuccess,
+</span>48 <span style=''>    JsValue,
+</span>49 <span style=''>    OWrites
+</span>50 <span style=''>  }
+</span>51 <span style=''>  import reactivemongo.api.commands.{ ResolvedCollectionCommand, ResultCursor }
+</span>52 <span style=''>  import reactivemongo.core.protocol.MongoWireVersion
+</span>53 <span style=''>  import JSONAggregationFramework.{ Aggregate, AggregationResult }
+</span>54 <span style=''>
+</span>55 <span style=''>  implicit object AggregateWriter
+</span>56 <span style=''>      extends OWrites[ResolvedCollectionCommand[Aggregate]] {
+</span>57 <span style=''>    def writes(agg: ResolvedCollectionCommand[Aggregate]): JsObject = {
+</span>58 <span style=''>      val fields = </span><span style='background: #AEF1AE'>Seq[(String, JsValue)](
+</span>59 <span style=''></span><span style='background: #AEF1AE'>        "aggregate" -> toJson(agg.collection),
+</span>60 <span style=''></span><span style='background: #AEF1AE'>        "pipeline" -> JsArray(agg.command.pipeline.map(_.makePipe)),
+</span>61 <span style=''></span><span style='background: #AEF1AE'>        "explain" -> toJson(agg.command.explain),
+</span>62 <span style=''></span><span style='background: #AEF1AE'>        "allowDiskUse" -> toJson(agg.command.allowDiskUse)
+</span>63 <span style=''></span><span style='background: #AEF1AE'>      )</span><span style=''>
+</span>64 <span style=''>
+</span>65 <span style=''>      def optFields: List[Option[(String, JsValue)]] = </span><span style='background: #AEF1AE'>List(
+</span>66 <span style=''></span><span style='background: #AEF1AE'>        agg.command.cursor.map(c => "cursor" -> Json.obj(
+</span>67 <span style=''></span><span style='background: #AEF1AE'>          "batchSize" -> c.batchSize
+</span>68 <span style=''></span><span style='background: #AEF1AE'>        ))
+</span>69 <span style=''></span><span style='background: #AEF1AE'>      )</span><span style=''>
+</span>70 <span style=''>
+</span>71 <span style=''>      def options = {
+</span>72 <span style=''>        if (</span><span style='background: #AEF1AE'>agg.command.wireVersion < MongoWireVersion.V32</span><span style=''>) </span><span style='background: #F0ADAD'>optFields.flatten</span><span style=''>
+</span>73 <span style=''>        else (</span><span style='background: #AEF1AE'>optFields ++ List(
+</span>74 <span style=''></span><span style='background: #AEF1AE'>          Some(agg.command.bypassDocumentValidation).map(by =>
+</span>75 <span style=''></span><span style='background: #AEF1AE'>            "bypassDocumentValidation" -> toJson(by)),
+</span>76 <span style=''></span><span style='background: #AEF1AE'>          agg.command.readConcern.map(rc => </span><span style='background: #F0ADAD'>"readConcern" -> toJson(rc.level)</span><span style='background: #AEF1AE'>)
+</span>77 <span style=''></span><span style='background: #AEF1AE'>        )).flatten</span><span style=''>
+</span>78 <span style=''>      }
+</span>79 <span style=''>
+</span>80 <span style=''>      </span><span style='background: #AEF1AE'>JsObject(fields ++ options)</span><span style=''>
+</span>81 <span style=''>    }
+</span>82 <span style=''>  }
+</span>83 <span style=''>
+</span>84 <span style=''>  implicit object AggregationResultReader
+</span>85 <span style=''>      extends DealingWithGenericCommandErrorsReader[AggregationResult] {
+</span>86 <span style=''>
+</span>87 <span style=''>    def readResult(doc: JsObject): AggregationResult =
+</span>88 <span style=''>      if (</span><span style='background: #AEF1AE'>doc.value contains "stages"</span><span style=''>) </span><span style='background: #AEF1AE'>AggregationResult(List(doc), None)</span><span style=''> else {
+</span>89 <span style=''>        (</span><span style='background: #AEF1AE'>doc \ "result").validateOpt[List[JsObject]].flatMap {
+</span>90 <span style=''></span><span style='background: #AEF1AE'>          case Some(docs) => JsSuccess(AggregationResult(docs, None))
+</span>91 <span style=''></span><span style='background: #AEF1AE'>          case _ => for {
+</span>92 <span style=''></span><span style='background: #AEF1AE'>            cursor <- (doc \ "cursor").validate[JsObject]
+</span>93 <span style=''></span><span style='background: #AEF1AE'>            id <- (cursor \ "id").validate[Long]
+</span>94 <span style=''></span><span style='background: #AEF1AE'>            ns <- (cursor \ "ns").validate[String]
+</span>95 <span style=''></span><span style='background: #AEF1AE'>            firstBatch <- (cursor \ "firstBatch").validate[List[JsObject]]
+</span>96 <span style=''></span><span style='background: #AEF1AE'>          } yield AggregationResult(firstBatch, Some(ResultCursor(id, ns)))
+</span>97 <span style=''></span><span style='background: #AEF1AE'>        }.get</span><span style=''>
+</span>98 <span style=''>      }
+</span>99 <span style=''>  }
+</span>100 <span style=''>}
+</span></pre>
+          </div>
+          <div class="tab-pane" id="statementlist">
+            <table cellspacing="0" cellpadding="0" class="table statementlist">
+      <tr>
+        <th>Line</th>
+        <th>Stmt Id</th>
+        <th>Pos</th>
+        <th>Tree</th>
+        <th>Symbol</th>
+        <th>Code</th>
+      </tr><tr>
+        <td>
+          28
+        </td>
+        <td>
+          1
+        </td>
+        <td>
+          995
+          -
+          1016
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          reactivemongo.play.json.JSONSerializationPack
+        </td>
+        <td style="background: #AEF1AE">
+          reactivemongo.play.json.JSONSerializationPack
+        </td>
+      </tr><tr>
+        <td>
+          31
+        </td>
+        <td>
+          2
+        </td>
+        <td>
+          1094
+          -
+          1116
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          play.api.libs.json.Json.obj
+        </td>
+        <td style="background: #AEF1AE">
+          play.api.libs.json.Json.obj((elements: _*))
+        </td>
+      </tr><tr>
+        <td>
+          34
+        </td>
+        <td>
+          5
+        </td>
+        <td>
+          1186
+          -
+          1199
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Predef.ArrowAssoc.-&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          scala.this.Predef.ArrowAssoc[String](name).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[play.api.libs.json.JsValue](value)(json.this.Writes.JsValueWrites))
+        </td>
+      </tr><tr>
+        <td>
+          34
+        </td>
+        <td>
+          4
+        </td>
+        <td>
+          1194
+          -
+          1199
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          play.api.libs.json.Json.toJsFieldJsValueWrapper
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Json.toJsFieldJsValueWrapper[play.api.libs.json.JsValue](value)(json.this.Writes.JsValueWrites)
+        </td>
+      </tr><tr>
+        <td>
+          34
+        </td>
+        <td>
+          3
+        </td>
+        <td>
+          1194
+          -
+          1194
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultWrites.JsValueWrites
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Writes.JsValueWrites
+        </td>
+      </tr><tr>
+        <td>
+          36
+        </td>
+        <td>
+          7
+        </td>
+        <td>
+          1253
+          -
+          1262
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          play.api.libs.json.Json.toJson
+        </td>
+        <td style="background: #F0ADAD">
+          play.api.libs.json.Json.toJson[Boolean](b)(json.this.Writes.BooleanWrites)
+        </td>
+      </tr><tr>
+        <td>
+          36
+        </td>
+        <td>
+          6
+        </td>
+        <td>
+          1259
+          -
+          1259
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultWrites.BooleanWrites
+        </td>
+        <td style="background: #F0ADAD">
+          json.this.Writes.BooleanWrites
+        </td>
+      </tr><tr>
+        <td>
+          37
+        </td>
+        <td>
+          8
+        </td>
+        <td>
+          1313
+          -
+          1313
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultWrites.IntWrites
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Writes.IntWrites
+        </td>
+      </tr><tr>
+        <td>
+          37
+        </td>
+        <td>
+          9
+        </td>
+        <td>
+          1307
+          -
+          1316
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          play.api.libs.json.Json.toJson
+        </td>
+        <td style="background: #AEF1AE">
+          play.api.libs.json.Json.toJson[Int](i)(json.this.Writes.IntWrites)
+        </td>
+      </tr><tr>
+        <td>
+          38
+        </td>
+        <td>
+          11
+        </td>
+        <td>
+          1363
+          -
+          1372
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          play.api.libs.json.Json.toJson
+        </td>
+        <td style="background: #F0ADAD">
+          play.api.libs.json.Json.toJson[Long](l)(json.this.Writes.LongWrites)
+        </td>
+      </tr><tr>
+        <td>
+          38
+        </td>
+        <td>
+          10
+        </td>
+        <td>
+          1369
+          -
+          1369
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultWrites.LongWrites
+        </td>
+        <td style="background: #F0ADAD">
+          json.this.Writes.LongWrites
+        </td>
+      </tr><tr>
+        <td>
+          39
+        </td>
+        <td>
+          13
+        </td>
+        <td>
+          1423
+          -
+          1432
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          play.api.libs.json.Json.toJson
+        </td>
+        <td style="background: #F0ADAD">
+          play.api.libs.json.Json.toJson[Double](d)(json.this.Writes.DoubleWrites)
+        </td>
+      </tr><tr>
+        <td>
+          39
+        </td>
+        <td>
+          12
+        </td>
+        <td>
+          1429
+          -
+          1429
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultWrites.DoubleWrites
+        </td>
+        <td style="background: #F0ADAD">
+          json.this.Writes.DoubleWrites
+        </td>
+      </tr><tr>
+        <td>
+          40
+        </td>
+        <td>
+          14
+        </td>
+        <td>
+          1489
+          -
+          1489
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultWrites.StringWrites
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Writes.StringWrites
+        </td>
+      </tr><tr>
+        <td>
+          40
+        </td>
+        <td>
+          15
+        </td>
+        <td>
+          1483
+          -
+          1492
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          play.api.libs.json.Json.toJson
+        </td>
+        <td style="background: #AEF1AE">
+          play.api.libs.json.Json.toJson[String](s)(json.this.Writes.StringWrites)
+        </td>
+      </tr><tr>
+        <td>
+          58
+        </td>
+        <td>
+          37
+        </td>
+        <td>
+          2020
+          -
+          2276
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.collection.generic.GenericCompanion.apply
+        </td>
+        <td style="background: #AEF1AE">
+          collection.this.Seq.apply[(String, play.api.libs.json.JsValue)](scala.this.Predef.ArrowAssoc[String](&quot;aggregate&quot;).-&gt;[play.api.libs.json.JsValue](play.api.libs.json.Json.toJson[String](agg.collection)(json.this.Writes.StringWrites)), scala.this.Predef.ArrowAssoc[String](&quot;pipeline&quot;).-&gt;[play.api.libs.json.JsArray](play.api.libs.json.JsArray.apply(agg.command.pipeline.map[reactivemongo.play.json.commands.JSONAggregationFramework.pack.Value, Seq[play.api.libs.json.JsValue]](((x$1: reactivemongo.play.json.commands.JSONAggregationFramework.PipelineOperator) =&gt; x$1.makePipe))(collection.this.Seq.canBuildFrom[reactivemongo.play.json.commands.JSONAggregationFramework.pack.Value]))), scala.this.Predef.ArrowAssoc[String](&quot;explain&quot;).-&gt;[play.api.libs.json.JsValue](play.api.libs.json.Json.toJson[Boolean](agg.command.explain)(json.this.Writes.BooleanWrites)), scala.this.Predef.ArrowAssoc[String](&quot;allowDiskUse&quot;).-&gt;[play.api.libs.json.JsValue](play.api.libs.json.Json.toJson[Boolean](agg.command.allowDiskUse)(json.this.Writes.BooleanWrites)))
+        </td>
+      </tr><tr>
+        <td>
+          59
+        </td>
+        <td>
+          17
+        </td>
+        <td>
+          2074
+          -
+          2088
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          reactivemongo.api.commands.ResolvedCollectionCommand.collection
+        </td>
+        <td style="background: #AEF1AE">
+          agg.collection
+        </td>
+      </tr><tr>
+        <td>
+          59
+        </td>
+        <td>
+          20
+        </td>
+        <td>
+          2052
+          -
+          2089
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Predef.ArrowAssoc.-&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          scala.this.Predef.ArrowAssoc[String](&quot;aggregate&quot;).-&gt;[play.api.libs.json.JsValue](play.api.libs.json.Json.toJson[String](agg.collection)(json.this.Writes.StringWrites))
+        </td>
+      </tr><tr>
+        <td>
+          59
+        </td>
+        <td>
+          16
+        </td>
+        <td>
+          2052
+          -
+          2063
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;aggregate&quot;
+        </td>
+      </tr><tr>
+        <td>
+          59
+        </td>
+        <td>
+          19
+        </td>
+        <td>
+          2067
+          -
+          2089
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          play.api.libs.json.Json.toJson
+        </td>
+        <td style="background: #AEF1AE">
+          play.api.libs.json.Json.toJson[String](agg.collection)(json.this.Writes.StringWrites)
+        </td>
+      </tr><tr>
+        <td>
+          59
+        </td>
+        <td>
+          18
+        </td>
+        <td>
+          2073
+          -
+          2073
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultWrites.StringWrites
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Writes.StringWrites
+        </td>
+      </tr><tr>
+        <td>
+          60
+        </td>
+        <td>
+          23
+        </td>
+        <td>
+          2145
+          -
+          2145
+        </td>
+        <td>
+          TypeApply
+        </td>
+        <td>
+          scala.collection.Seq.canBuildFrom
+        </td>
+        <td style="background: #AEF1AE">
+          collection.this.Seq.canBuildFrom[reactivemongo.play.json.commands.JSONAggregationFramework.pack.Value]
+        </td>
+      </tr><tr>
+        <td>
+          60
+        </td>
+        <td>
+          26
+        </td>
+        <td>
+          2099
+          -
+          2158
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Predef.ArrowAssoc.-&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          scala.this.Predef.ArrowAssoc[String](&quot;pipeline&quot;).-&gt;[play.api.libs.json.JsArray](play.api.libs.json.JsArray.apply(agg.command.pipeline.map[reactivemongo.play.json.commands.JSONAggregationFramework.pack.Value, Seq[play.api.libs.json.JsValue]](((x$1: reactivemongo.play.json.commands.JSONAggregationFramework.PipelineOperator) =&gt; x$1.makePipe))(collection.this.Seq.canBuildFrom[reactivemongo.play.json.commands.JSONAggregationFramework.pack.Value])))
+        </td>
+      </tr><tr>
+        <td>
+          60
+        </td>
+        <td>
+          22
+        </td>
+        <td>
+          2146
+          -
+          2156
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          reactivemongo.api.commands.AggregationFramework.PipelineOperator.makePipe
+        </td>
+        <td style="background: #AEF1AE">
+          x$1.makePipe
+        </td>
+      </tr><tr>
+        <td>
+          60
+        </td>
+        <td>
+          25
+        </td>
+        <td>
+          2113
+          -
+          2158
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          play.api.libs.json.JsArray.apply
+        </td>
+        <td style="background: #AEF1AE">
+          play.api.libs.json.JsArray.apply(agg.command.pipeline.map[reactivemongo.play.json.commands.JSONAggregationFramework.pack.Value, Seq[play.api.libs.json.JsValue]](((x$1: reactivemongo.play.json.commands.JSONAggregationFramework.PipelineOperator) =&gt; x$1.makePipe))(collection.this.Seq.canBuildFrom[reactivemongo.play.json.commands.JSONAggregationFramework.pack.Value]))
+        </td>
+      </tr><tr>
+        <td>
+          60
+        </td>
+        <td>
+          21
+        </td>
+        <td>
+          2099
+          -
+          2109
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;pipeline&quot;
+        </td>
+      </tr><tr>
+        <td>
+          60
+        </td>
+        <td>
+          24
+        </td>
+        <td>
+          2121
+          -
+          2157
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          scala.collection.TraversableLike.map
+        </td>
+        <td style="background: #AEF1AE">
+          agg.command.pipeline.map[reactivemongo.play.json.commands.JSONAggregationFramework.pack.Value, Seq[play.api.libs.json.JsValue]](((x$1: reactivemongo.play.json.commands.JSONAggregationFramework.PipelineOperator) =&gt; x$1.makePipe))(collection.this.Seq.canBuildFrom[reactivemongo.play.json.commands.JSONAggregationFramework.pack.Value])
+        </td>
+      </tr><tr>
+        <td>
+          61
+        </td>
+        <td>
+          29
+        </td>
+        <td>
+          2187
+          -
+          2187
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultWrites.BooleanWrites
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Writes.BooleanWrites
+        </td>
+      </tr><tr>
+        <td>
+          61
+        </td>
+        <td>
+          31
+        </td>
+        <td>
+          2168
+          -
+          2208
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Predef.ArrowAssoc.-&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          scala.this.Predef.ArrowAssoc[String](&quot;explain&quot;).-&gt;[play.api.libs.json.JsValue](play.api.libs.json.Json.toJson[Boolean](agg.command.explain)(json.this.Writes.BooleanWrites))
+        </td>
+      </tr><tr>
+        <td>
+          61
+        </td>
+        <td>
+          28
+        </td>
+        <td>
+          2188
+          -
+          2207
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          reactivemongo.api.commands.AggregationFramework.Aggregate.explain
+        </td>
+        <td style="background: #AEF1AE">
+          agg.command.explain
+        </td>
+      </tr><tr>
+        <td>
+          61
+        </td>
+        <td>
+          27
+        </td>
+        <td>
+          2168
+          -
+          2177
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;explain&quot;
+        </td>
+      </tr><tr>
+        <td>
+          61
+        </td>
+        <td>
+          30
+        </td>
+        <td>
+          2181
+          -
+          2208
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          play.api.libs.json.Json.toJson
+        </td>
+        <td style="background: #AEF1AE">
+          play.api.libs.json.Json.toJson[Boolean](agg.command.explain)(json.this.Writes.BooleanWrites)
+        </td>
+      </tr><tr>
+        <td>
+          62
+        </td>
+        <td>
+          32
+        </td>
+        <td>
+          2218
+          -
+          2232
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;allowDiskUse&quot;
+        </td>
+      </tr><tr>
+        <td>
+          62
+        </td>
+        <td>
+          35
+        </td>
+        <td>
+          2236
+          -
+          2268
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          play.api.libs.json.Json.toJson
+        </td>
+        <td style="background: #AEF1AE">
+          play.api.libs.json.Json.toJson[Boolean](agg.command.allowDiskUse)(json.this.Writes.BooleanWrites)
+        </td>
+      </tr><tr>
+        <td>
+          62
+        </td>
+        <td>
+          34
+        </td>
+        <td>
+          2242
+          -
+          2242
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultWrites.BooleanWrites
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Writes.BooleanWrites
+        </td>
+      </tr><tr>
+        <td>
+          62
+        </td>
+        <td>
+          36
+        </td>
+        <td>
+          2218
+          -
+          2268
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Predef.ArrowAssoc.-&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          scala.this.Predef.ArrowAssoc[String](&quot;allowDiskUse&quot;).-&gt;[play.api.libs.json.JsValue](play.api.libs.json.Json.toJson[Boolean](agg.command.allowDiskUse)(json.this.Writes.BooleanWrites))
+        </td>
+      </tr><tr>
+        <td>
+          62
+        </td>
+        <td>
+          33
+        </td>
+        <td>
+          2243
+          -
+          2267
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          reactivemongo.api.commands.AggregationFramework.Aggregate.allowDiskUse
+        </td>
+        <td style="background: #AEF1AE">
+          agg.command.allowDiskUse
+        </td>
+      </tr><tr>
+        <td>
+          65
+        </td>
+        <td>
+          47
+        </td>
+        <td>
+          2333
+          -
+          2452
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.collection.immutable.List.apply
+        </td>
+        <td style="background: #AEF1AE">
+          immutable.this.List.apply[Option[(String, play.api.libs.json.JsObject)]](agg.command.cursor.map[(String, play.api.libs.json.JsObject)](((c: reactivemongo.play.json.commands.JSONAggregationFramework.Cursor) =&gt; scala.this.Predef.ArrowAssoc[String](&quot;cursor&quot;).-&gt;[play.api.libs.json.JsObject](play.api.libs.json.Json.obj(scala.this.Predef.ArrowAssoc[String](&quot;batchSize&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[Int](c.batchSize)(json.this.Writes.IntWrites)))))))
+        </td>
+      </tr><tr>
+        <td>
+          66
+        </td>
+        <td>
+          44
+        </td>
+        <td>
+          2387
+          -
+          2443
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          play.api.libs.json.Json.obj
+        </td>
+        <td style="background: #AEF1AE">
+          play.api.libs.json.Json.obj(scala.this.Predef.ArrowAssoc[String](&quot;batchSize&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[Int](c.batchSize)(json.this.Writes.IntWrites)))
+        </td>
+      </tr><tr>
+        <td>
+          66
+        </td>
+        <td>
+          38
+        </td>
+        <td>
+          2375
+          -
+          2383
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;cursor&quot;
+        </td>
+      </tr><tr>
+        <td>
+          66
+        </td>
+        <td>
+          46
+        </td>
+        <td>
+          2347
+          -
+          2444
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Option.map
+        </td>
+        <td style="background: #AEF1AE">
+          agg.command.cursor.map[(String, play.api.libs.json.JsObject)](((c: reactivemongo.play.json.commands.JSONAggregationFramework.Cursor) =&gt; scala.this.Predef.ArrowAssoc[String](&quot;cursor&quot;).-&gt;[play.api.libs.json.JsObject](play.api.libs.json.Json.obj(scala.this.Predef.ArrowAssoc[String](&quot;batchSize&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[Int](c.batchSize)(json.this.Writes.IntWrites))))))
+        </td>
+      </tr><tr>
+        <td>
+          66
+        </td>
+        <td>
+          45
+        </td>
+        <td>
+          2375
+          -
+          2443
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Predef.ArrowAssoc.-&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          scala.this.Predef.ArrowAssoc[String](&quot;cursor&quot;).-&gt;[play.api.libs.json.JsObject](play.api.libs.json.Json.obj(scala.this.Predef.ArrowAssoc[String](&quot;batchSize&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[Int](c.batchSize)(json.this.Writes.IntWrites))))
+        </td>
+      </tr><tr>
+        <td>
+          67
+        </td>
+        <td>
+          41
+        </td>
+        <td>
+          2424
+          -
+          2424
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultWrites.IntWrites
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Writes.IntWrites
+        </td>
+      </tr><tr>
+        <td>
+          67
+        </td>
+        <td>
+          40
+        </td>
+        <td>
+          2422
+          -
+          2433
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          reactivemongo.api.commands.AggregationFramework.Cursor.batchSize
+        </td>
+        <td style="background: #AEF1AE">
+          c.batchSize
+        </td>
+      </tr><tr>
+        <td>
+          67
+        </td>
+        <td>
+          43
+        </td>
+        <td>
+          2407
+          -
+          2433
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Predef.ArrowAssoc.-&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          scala.this.Predef.ArrowAssoc[String](&quot;batchSize&quot;).-&gt;[play.api.libs.json.Json.JsValueWrapper](json.this.Json.toJsFieldJsValueWrapper[Int](c.batchSize)(json.this.Writes.IntWrites))
+        </td>
+      </tr><tr>
+        <td>
+          67
+        </td>
+        <td>
+          39
+        </td>
+        <td>
+          2407
+          -
+          2418
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;batchSize&quot;
+        </td>
+      </tr><tr>
+        <td>
+          67
+        </td>
+        <td>
+          42
+        </td>
+        <td>
+          2422
+          -
+          2433
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          play.api.libs.json.Json.toJsFieldJsValueWrapper
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Json.toJsFieldJsValueWrapper[Int](c.batchSize)(json.this.Writes.IntWrites)
+        </td>
+      </tr><tr>
+        <td>
+          72
+        </td>
+        <td>
+          50
+        </td>
+        <td>
+          2546
+          -
+          2546
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Option.option2Iterable
+        </td>
+        <td style="background: #F0ADAD">
+          scala.this.Option.option2Iterable[(String, play.api.libs.json.JsValue)](xo)
+        </td>
+      </tr><tr>
+        <td>
+          72
+        </td>
+        <td>
+          49
+        </td>
+        <td>
+          2488
+          -
+          2534
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.math.Ordered.&lt;
+        </td>
+        <td style="background: #AEF1AE">
+          agg.command.wireVersion.&lt;(reactivemongo.core.protocol.MongoWireVersion.V32)
+        </td>
+      </tr><tr>
+        <td>
+          72
+        </td>
+        <td>
+          52
+        </td>
+        <td>
+          2536
+          -
+          2553
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          scala.collection.generic.GenericTraversableTemplate.flatten
+        </td>
+        <td style="background: #F0ADAD">
+          optFields.flatten[(String, play.api.libs.json.JsValue)]({
+  ((xo: Option[(String, play.api.libs.json.JsValue)]) =&gt; scala.this.Option.option2Iterable[(String, play.api.libs.json.JsValue)](xo))
+})
+        </td>
+      </tr><tr>
+        <td>
+          72
+        </td>
+        <td>
+          48
+        </td>
+        <td>
+          2514
+          -
+          2534
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          reactivemongo.core.protocol.MongoWireVersion.V32
+        </td>
+        <td style="background: #AEF1AE">
+          reactivemongo.core.protocol.MongoWireVersion.V32
+        </td>
+      </tr><tr>
+        <td>
+          72
+        </td>
+        <td>
+          51
+        </td>
+        <td>
+          2536
+          -
+          2553
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          scala.collection.generic.GenericTraversableTemplate.flatten
+        </td>
+        <td style="background: #F0ADAD">
+          optFields.flatten[(String, play.api.libs.json.JsValue)]({
+  ((xo: Option[(String, play.api.libs.json.JsValue)]) =&gt; scala.this.Option.option2Iterable[(String, play.api.libs.json.JsValue)](xo))
+})
+        </td>
+      </tr><tr>
+        <td>
+          73
+        </td>
+        <td>
+          65
+        </td>
+        <td>
+          2581
+          -
+          2793
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.collection.immutable.List.apply
+        </td>
+        <td style="background: #AEF1AE">
+          immutable.this.List.apply[Option[(String, play.api.libs.json.JsValue)]](scala.Some.apply[Boolean](agg.command.bypassDocumentValidation).map[(String, play.api.libs.json.JsValue)](((by: Boolean) =&gt; scala.this.Predef.ArrowAssoc[String](&quot;bypassDocumentValidation&quot;).-&gt;[play.api.libs.json.JsValue](play.api.libs.json.Json.toJson[Boolean](by)(json.this.Writes.BooleanWrites)))), agg.command.readConcern.map[(String, play.api.libs.json.JsValue)](((rc: reactivemongo.api.ReadConcern) =&gt; scala.this.Predef.ArrowAssoc[String](&quot;readConcern&quot;).-&gt;[play.api.libs.json.JsValue](play.api.libs.json.Json.toJson[String](rc.level)(json.this.Writes.StringWrites)))))
+        </td>
+      </tr><tr>
+        <td>
+          73
+        </td>
+        <td>
+          66
+        </td>
+        <td>
+          2578
+          -
+          2578
+        </td>
+        <td>
+          TypeApply
+        </td>
+        <td>
+          scala.collection.immutable.List.canBuildFrom
+        </td>
+        <td style="background: #AEF1AE">
+          immutable.this.List.canBuildFrom[Option[(String, play.api.libs.json.JsValue)]]
+        </td>
+      </tr><tr>
+        <td>
+          74
+        </td>
+        <td>
+          53
+        </td>
+        <td>
+          2602
+          -
+          2638
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          reactivemongo.api.commands.AggregationFramework.Aggregate.bypassDocumentValidation
+        </td>
+        <td style="background: #AEF1AE">
+          agg.command.bypassDocumentValidation
+        </td>
+      </tr><tr>
+        <td>
+          74
+        </td>
+        <td>
+          58
+        </td>
+        <td>
+          2597
+          -
+          2703
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Option.map
+        </td>
+        <td style="background: #AEF1AE">
+          scala.Some.apply[Boolean](agg.command.bypassDocumentValidation).map[(String, play.api.libs.json.JsValue)](((by: Boolean) =&gt; scala.this.Predef.ArrowAssoc[String](&quot;bypassDocumentValidation&quot;).-&gt;[play.api.libs.json.JsValue](play.api.libs.json.Json.toJson[Boolean](by)(json.this.Writes.BooleanWrites))))
+        </td>
+      </tr><tr>
+        <td>
+          75
+        </td>
+        <td>
+          56
+        </td>
+        <td>
+          2692
+          -
+          2702
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          play.api.libs.json.Json.toJson
+        </td>
+        <td style="background: #AEF1AE">
+          play.api.libs.json.Json.toJson[Boolean](by)(json.this.Writes.BooleanWrites)
+        </td>
+      </tr><tr>
+        <td>
+          75
+        </td>
+        <td>
+          55
+        </td>
+        <td>
+          2698
+          -
+          2698
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultWrites.BooleanWrites
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Writes.BooleanWrites
+        </td>
+      </tr><tr>
+        <td>
+          75
+        </td>
+        <td>
+          54
+        </td>
+        <td>
+          2662
+          -
+          2688
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;bypassDocumentValidation&quot;
+        </td>
+      </tr><tr>
+        <td>
+          75
+        </td>
+        <td>
+          57
+        </td>
+        <td>
+          2662
+          -
+          2702
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Predef.ArrowAssoc.-&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          scala.this.Predef.ArrowAssoc[String](&quot;bypassDocumentValidation&quot;).-&gt;[play.api.libs.json.JsValue](play.api.libs.json.Json.toJson[Boolean](by)(json.this.Writes.BooleanWrites))
+        </td>
+      </tr><tr>
+        <td>
+          76
+        </td>
+        <td>
+          59
+        </td>
+        <td>
+          2749
+          -
+          2762
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #F0ADAD">
+          &quot;readConcern&quot;
+        </td>
+      </tr><tr>
+        <td>
+          76
+        </td>
+        <td>
+          62
+        </td>
+        <td>
+          2766
+          -
+          2782
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          play.api.libs.json.Json.toJson
+        </td>
+        <td style="background: #F0ADAD">
+          play.api.libs.json.Json.toJson[String](rc.level)(json.this.Writes.StringWrites)
+        </td>
+      </tr><tr>
+        <td>
+          76
+        </td>
+        <td>
+          64
+        </td>
+        <td>
+          2715
+          -
+          2783
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Option.map
+        </td>
+        <td style="background: #AEF1AE">
+          agg.command.readConcern.map[(String, play.api.libs.json.JsValue)](((rc: reactivemongo.api.ReadConcern) =&gt; scala.this.Predef.ArrowAssoc[String](&quot;readConcern&quot;).-&gt;[play.api.libs.json.JsValue](play.api.libs.json.Json.toJson[String](rc.level)(json.this.Writes.StringWrites))))
+        </td>
+      </tr><tr>
+        <td>
+          76
+        </td>
+        <td>
+          61
+        </td>
+        <td>
+          2772
+          -
+          2772
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultWrites.StringWrites
+        </td>
+        <td style="background: #F0ADAD">
+          json.this.Writes.StringWrites
+        </td>
+      </tr><tr>
+        <td>
+          76
+        </td>
+        <td>
+          60
+        </td>
+        <td>
+          2773
+          -
+          2781
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          reactivemongo.api.ReadConcern.level
+        </td>
+        <td style="background: #F0ADAD">
+          rc.level
+        </td>
+      </tr><tr>
+        <td>
+          76
+        </td>
+        <td>
+          63
+        </td>
+        <td>
+          2749
+          -
+          2782
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Predef.ArrowAssoc.-&gt;
+        </td>
+        <td style="background: #F0ADAD">
+          scala.this.Predef.ArrowAssoc[String](&quot;readConcern&quot;).-&gt;[play.api.libs.json.JsValue](play.api.libs.json.Json.toJson[String](rc.level)(json.this.Writes.StringWrites))
+        </td>
+      </tr><tr>
+        <td>
+          77
+        </td>
+        <td>
+          68
+        </td>
+        <td>
+          2568
+          -
+          2802
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          scala.collection.generic.GenericTraversableTemplate.flatten
+        </td>
+        <td style="background: #AEF1AE">
+          optFields.++[Option[(String, play.api.libs.json.JsValue)], List[Option[(String, play.api.libs.json.JsValue)]]](immutable.this.List.apply[Option[(String, play.api.libs.json.JsValue)]](scala.Some.apply[Boolean](agg.command.bypassDocumentValidation).map[(String, play.api.libs.json.JsValue)](((by: Boolean) =&gt; scala.this.Predef.ArrowAssoc[String](&quot;bypassDocumentValidation&quot;).-&gt;[play.api.libs.json.JsValue](play.api.libs.json.Json.toJson[Boolean](by)(json.this.Writes.BooleanWrites)))), agg.command.readConcern.map[(String, play.api.libs.json.JsValue)](((rc: reactivemongo.api.ReadConcern) =&gt; scala.this.Predef.ArrowAssoc[String](&quot;readConcern&quot;).-&gt;[play.api.libs.json.JsValue](play.api.libs.json.Json.toJson[String](rc.level)(json.this.Writes.StringWrites))))))(immutable.this.List.canBuildFrom[Option[(String, play.api.libs.json.JsValue)]]).flatten[(String, play.api.libs.json.JsValue)]({
+  ((xo: Option[(String, play.api.libs.json.JsValue)]) =&gt; scala.this.Option.option2Iterable[(String, play.api.libs.json.JsValue)](xo))
+})
+        </td>
+      </tr><tr>
+        <td>
+          77
+        </td>
+        <td>
+          67
+        </td>
+        <td>
+          2795
+          -
+          2795
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Option.option2Iterable
+        </td>
+        <td style="background: #AEF1AE">
+          scala.this.Option.option2Iterable[(String, play.api.libs.json.JsValue)](xo)
+        </td>
+      </tr><tr>
+        <td>
+          77
+        </td>
+        <td>
+          69
+        </td>
+        <td>
+          2568
+          -
+          2802
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          scala.collection.generic.GenericTraversableTemplate.flatten
+        </td>
+        <td style="background: #AEF1AE">
+          optFields.++[Option[(String, play.api.libs.json.JsValue)], List[Option[(String, play.api.libs.json.JsValue)]]](immutable.this.List.apply[Option[(String, play.api.libs.json.JsValue)]](scala.Some.apply[Boolean](agg.command.bypassDocumentValidation).map[(String, play.api.libs.json.JsValue)](((by: Boolean) =&gt; scala.this.Predef.ArrowAssoc[String](&quot;bypassDocumentValidation&quot;).-&gt;[play.api.libs.json.JsValue](play.api.libs.json.Json.toJson[Boolean](by)(json.this.Writes.BooleanWrites)))), agg.command.readConcern.map[(String, play.api.libs.json.JsValue)](((rc: reactivemongo.api.ReadConcern) =&gt; scala.this.Predef.ArrowAssoc[String](&quot;readConcern&quot;).-&gt;[play.api.libs.json.JsValue](play.api.libs.json.Json.toJson[String](rc.level)(json.this.Writes.StringWrites))))))(immutable.this.List.canBuildFrom[Option[(String, play.api.libs.json.JsValue)]]).flatten[(String, play.api.libs.json.JsValue)]({
+  ((xo: Option[(String, play.api.libs.json.JsValue)]) =&gt; scala.this.Option.option2Iterable[(String, play.api.libs.json.JsValue)](xo))
+})
+        </td>
+      </tr><tr>
+        <td>
+          80
+        </td>
+        <td>
+          71
+        </td>
+        <td>
+          2827
+          -
+          2844
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          scala.collection.TraversableLike.++
+        </td>
+        <td style="background: #AEF1AE">
+          fields.++[(String, play.api.libs.json.JsValue), Seq[(String, play.api.libs.json.JsValue)]](options)(collection.this.Seq.canBuildFrom[(String, play.api.libs.json.JsValue)])
+        </td>
+      </tr><tr>
+        <td>
+          80
+        </td>
+        <td>
+          70
+        </td>
+        <td>
+          2834
+          -
+          2834
+        </td>
+        <td>
+          TypeApply
+        </td>
+        <td>
+          scala.collection.Seq.canBuildFrom
+        </td>
+        <td style="background: #AEF1AE">
+          collection.this.Seq.canBuildFrom[(String, play.api.libs.json.JsValue)]
+        </td>
+      </tr><tr>
+        <td>
+          80
+        </td>
+        <td>
+          72
+        </td>
+        <td>
+          2818
+          -
+          2845
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          play.api.libs.json.JsObject.apply
+        </td>
+        <td style="background: #AEF1AE">
+          play.api.libs.json.JsObject.apply(fields.++[(String, play.api.libs.json.JsValue), Seq[(String, play.api.libs.json.JsValue)]](options)(collection.this.Seq.canBuildFrom[(String, play.api.libs.json.JsValue)]))
+        </td>
+      </tr><tr>
+        <td>
+          88
+        </td>
+        <td>
+          77
+        </td>
+        <td>
+          3067
+          -
+          3101
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          reactivemongo.api.commands.AggregationFramework.AggregationResult.apply
+        </td>
+        <td style="background: #AEF1AE">
+          JSONAggregationFramework.AggregationResult.apply(immutable.this.List.apply[play.api.libs.json.JsObject](doc), scala.None)
+        </td>
+      </tr><tr>
+        <td>
+          88
+        </td>
+        <td>
+          74
+        </td>
+        <td>
+          3085
+          -
+          3094
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.collection.immutable.List.apply
+        </td>
+        <td style="background: #AEF1AE">
+          immutable.this.List.apply[play.api.libs.json.JsObject](doc)
+        </td>
+      </tr><tr>
+        <td>
+          88
+        </td>
+        <td>
+          73
+        </td>
+        <td>
+          3038
+          -
+          3065
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.collection.MapLike.contains
+        </td>
+        <td style="background: #AEF1AE">
+          doc.value.contains(&quot;stages&quot;)
+        </td>
+      </tr><tr>
+        <td>
+          88
+        </td>
+        <td>
+          76
+        </td>
+        <td>
+          3067
+          -
+          3101
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          reactivemongo.api.commands.AggregationFramework.AggregationResult.apply
+        </td>
+        <td style="background: #AEF1AE">
+          JSONAggregationFramework.AggregationResult.apply(immutable.this.List.apply[play.api.libs.json.JsObject](doc), scala.None)
+        </td>
+      </tr><tr>
+        <td>
+          88
+        </td>
+        <td>
+          75
+        </td>
+        <td>
+          3096
+          -
+          3100
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          scala.None
+        </td>
+        <td style="background: #AEF1AE">
+          scala.None
+        </td>
+      </tr><tr>
+        <td>
+          89
+        </td>
+        <td>
+          80
+        </td>
+        <td>
+          3145
+          -
+          3145
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultReads.JsObjectReads
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Reads.JsObjectReads
+        </td>
+      </tr><tr>
+        <td>
+          89
+        </td>
+        <td>
+          79
+        </td>
+        <td>
+          3145
+          -
+          3145
+        </td>
+        <td>
+          TypeApply
+        </td>
+        <td>
+          scala.collection.immutable.List.canBuildFrom
+        </td>
+        <td style="background: #AEF1AE">
+          immutable.this.List.canBuildFrom[play.api.libs.json.JsObject]
+        </td>
+      </tr><tr>
+        <td>
+          89
+        </td>
+        <td>
+          78
+        </td>
+        <td>
+          3124
+          -
+          3132
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;result&quot;
+        </td>
+      </tr><tr>
+        <td>
+          89
+        </td>
+        <td>
+          81
+        </td>
+        <td>
+          3145
+          -
+          3145
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          play.api.libs.json.LowPriorityDefaultReads.traversableReads
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Reads.traversableReads[List, play.api.libs.json.JsObject](immutable.this.List.canBuildFrom[play.api.libs.json.JsObject], json.this.Reads.JsObjectReads)
+        </td>
+      </tr><tr>
+        <td>
+          90
+        </td>
+        <td>
+          83
+        </td>
+        <td>
+          3211
+          -
+          3240
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          reactivemongo.api.commands.AggregationFramework.AggregationResult.apply
+        </td>
+        <td style="background: #AEF1AE">
+          JSONAggregationFramework.AggregationResult.apply(docs, scala.None)
+        </td>
+      </tr><tr>
+        <td>
+          90
+        </td>
+        <td>
+          82
+        </td>
+        <td>
+          3235
+          -
+          3239
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          scala.None
+        </td>
+        <td style="background: #AEF1AE">
+          scala.None
+        </td>
+      </tr><tr>
+        <td>
+          90
+        </td>
+        <td>
+          85
+        </td>
+        <td>
+          3201
+          -
+          3241
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          play.api.libs.json.JsSuccess.apply
+        </td>
+        <td style="background: #AEF1AE">
+          play.api.libs.json.JsSuccess.apply[reactivemongo.play.json.commands.JSONAggregationFramework.AggregationResult](JSONAggregationFramework.AggregationResult.apply(docs, scala.None), play.api.libs.json.JsSuccess.apply$default$2[Nothing])
+        </td>
+      </tr><tr>
+        <td>
+          90
+        </td>
+        <td>
+          84
+        </td>
+        <td>
+          3201
+          -
+          3201
+        </td>
+        <td>
+          TypeApply
+        </td>
+        <td>
+          play.api.libs.json.JsSuccess.apply$default$2
+        </td>
+        <td style="background: #AEF1AE">
+          play.api.libs.json.JsSuccess.apply$default$2[Nothing]
+        </td>
+      </tr><tr>
+        <td>
+          92
+        </td>
+        <td>
+          86
+        </td>
+        <td>
+          3297
+          -
+          3305
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;cursor&quot;
+        </td>
+      </tr><tr>
+        <td>
+          92
+        </td>
+        <td>
+          87
+        </td>
+        <td>
+          3315
+          -
+          3315
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultReads.JsObjectReads
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Reads.JsObjectReads
+        </td>
+      </tr><tr>
+        <td>
+          92
+        </td>
+        <td>
+          102
+        </td>
+        <td>
+          3262
+          -
+          3576
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          play.api.libs.json.JsResult.flatMap
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.JsValue.jsValueToJsLookup(doc).\(&quot;cursor&quot;).validate[play.api.libs.json.JsObject](json.this.Reads.JsObjectReads).flatMap[reactivemongo.play.json.commands.JSONAggregationFramework.AggregationResult](((cursor: play.api.libs.json.JsObject) =&gt; json.this.JsValue.jsValueToJsLookup(cursor).\(&quot;id&quot;).validate[Long](json.this.Reads.LongReads).flatMap[reactivemongo.play.json.commands.JSONAggregationFramework.AggregationResult](((id: Long) =&gt; json.this.JsValue.jsValueToJsLookup(cursor).\(&quot;ns&quot;).validate[String](json.this.Reads.StringReads).flatMap[reactivemongo.play.json.commands.JSONAggregationFramework.AggregationResult](((ns: String) =&gt; json.this.JsValue.jsValueToJsLookup(cursor).\(&quot;firstBatch&quot;).validate[List[play.api.libs.json.JsObject]](json.this.Reads.traversableReads[List, play.api.libs.json.JsObject](immutable.this.List.canBuildFrom[play.api.libs.json.JsObject], json.this.Reads.JsObjectReads)).map[reactivemongo.play.json.commands.JSONAggregationFramework.AggregationResult](((firstBatch: List[play.api.libs.json.JsObject]) =&gt; JSONAggregationFramework.AggregationResult.apply(firstBatch, scala.Some.apply[reactivemongo.api.commands.ResultCursor](reactivemongo.api.commands.ResultCursor.apply(id, ns)))))))))))
+        </td>
+      </tr><tr>
+        <td>
+          93
+        </td>
+        <td>
+          101
+        </td>
+        <td>
+          3338
+          -
+          3576
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          play.api.libs.json.JsResult.flatMap
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.JsValue.jsValueToJsLookup(cursor).\(&quot;id&quot;).validate[Long](json.this.Reads.LongReads).flatMap[reactivemongo.play.json.commands.JSONAggregationFramework.AggregationResult](((id: Long) =&gt; json.this.JsValue.jsValueToJsLookup(cursor).\(&quot;ns&quot;).validate[String](json.this.Reads.StringReads).flatMap[reactivemongo.play.json.commands.JSONAggregationFramework.AggregationResult](((ns: String) =&gt; json.this.JsValue.jsValueToJsLookup(cursor).\(&quot;firstBatch&quot;).validate[List[play.api.libs.json.JsObject]](json.this.Reads.traversableReads[List, play.api.libs.json.JsObject](immutable.this.List.canBuildFrom[play.api.libs.json.JsObject], json.this.Reads.JsObjectReads)).map[reactivemongo.play.json.commands.JSONAggregationFramework.AggregationResult](((firstBatch: List[play.api.libs.json.JsObject]) =&gt; JSONAggregationFramework.AggregationResult.apply(firstBatch, scala.Some.apply[reactivemongo.api.commands.ResultCursor](reactivemongo.api.commands.ResultCursor.apply(id, ns)))))))))
+        </td>
+      </tr><tr>
+        <td>
+          93
+        </td>
+        <td>
+          89
+        </td>
+        <td>
+          3368
+          -
+          3368
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultReads.LongReads
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Reads.LongReads
+        </td>
+      </tr><tr>
+        <td>
+          93
+        </td>
+        <td>
+          88
+        </td>
+        <td>
+          3354
+          -
+          3358
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;id&quot;
+        </td>
+      </tr><tr>
+        <td>
+          94
+        </td>
+        <td>
+          100
+        </td>
+        <td>
+          3387
+          -
+          3576
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          play.api.libs.json.JsResult.flatMap
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.JsValue.jsValueToJsLookup(cursor).\(&quot;ns&quot;).validate[String](json.this.Reads.StringReads).flatMap[reactivemongo.play.json.commands.JSONAggregationFramework.AggregationResult](((ns: String) =&gt; json.this.JsValue.jsValueToJsLookup(cursor).\(&quot;firstBatch&quot;).validate[List[play.api.libs.json.JsObject]](json.this.Reads.traversableReads[List, play.api.libs.json.JsObject](immutable.this.List.canBuildFrom[play.api.libs.json.JsObject], json.this.Reads.JsObjectReads)).map[reactivemongo.play.json.commands.JSONAggregationFramework.AggregationResult](((firstBatch: List[play.api.libs.json.JsObject]) =&gt; JSONAggregationFramework.AggregationResult.apply(firstBatch, scala.Some.apply[reactivemongo.api.commands.ResultCursor](reactivemongo.api.commands.ResultCursor.apply(id, ns)))))))
+        </td>
+      </tr><tr>
+        <td>
+          94
+        </td>
+        <td>
+          91
+        </td>
+        <td>
+          3417
+          -
+          3417
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultReads.StringReads
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Reads.StringReads
+        </td>
+      </tr><tr>
+        <td>
+          94
+        </td>
+        <td>
+          90
+        </td>
+        <td>
+          3403
+          -
+          3407
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;ns&quot;
+        </td>
+      </tr><tr>
+        <td>
+          95
+        </td>
+        <td>
+          92
+        </td>
+        <td>
+          3462
+          -
+          3474
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;nosymbol&gt;
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;firstBatch&quot;
+        </td>
+      </tr><tr>
+        <td>
+          95
+        </td>
+        <td>
+          95
+        </td>
+        <td>
+          3484
+          -
+          3484
+        </td>
+        <td>
+          ApplyToImplicitArgs
+        </td>
+        <td>
+          play.api.libs.json.LowPriorityDefaultReads.traversableReads
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Reads.traversableReads[List, play.api.libs.json.JsObject](immutable.this.List.canBuildFrom[play.api.libs.json.JsObject], json.this.Reads.JsObjectReads)
+        </td>
+      </tr><tr>
+        <td>
+          95
+        </td>
+        <td>
+          94
+        </td>
+        <td>
+          3484
+          -
+          3484
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.DefaultReads.JsObjectReads
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.Reads.JsObjectReads
+        </td>
+      </tr><tr>
+        <td>
+          95
+        </td>
+        <td>
+          99
+        </td>
+        <td>
+          3438
+          -
+          3576
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          play.api.libs.json.JsResult.map
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.JsValue.jsValueToJsLookup(cursor).\(&quot;firstBatch&quot;).validate[List[play.api.libs.json.JsObject]](json.this.Reads.traversableReads[List, play.api.libs.json.JsObject](immutable.this.List.canBuildFrom[play.api.libs.json.JsObject], json.this.Reads.JsObjectReads)).map[reactivemongo.play.json.commands.JSONAggregationFramework.AggregationResult](((firstBatch: List[play.api.libs.json.JsObject]) =&gt; JSONAggregationFramework.AggregationResult.apply(firstBatch, scala.Some.apply[reactivemongo.api.commands.ResultCursor](reactivemongo.api.commands.ResultCursor.apply(id, ns)))))
+        </td>
+      </tr><tr>
+        <td>
+          95
+        </td>
+        <td>
+          93
+        </td>
+        <td>
+          3484
+          -
+          3484
+        </td>
+        <td>
+          TypeApply
+        </td>
+        <td>
+          scala.collection.immutable.List.canBuildFrom
+        </td>
+        <td style="background: #AEF1AE">
+          immutable.this.List.canBuildFrom[play.api.libs.json.JsObject]
+        </td>
+      </tr><tr>
+        <td>
+          96
+        </td>
+        <td>
+          98
+        </td>
+        <td>
+          3519
+          -
+          3576
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          reactivemongo.api.commands.AggregationFramework.AggregationResult.apply
+        </td>
+        <td style="background: #AEF1AE">
+          JSONAggregationFramework.AggregationResult.apply(firstBatch, scala.Some.apply[reactivemongo.api.commands.ResultCursor](reactivemongo.api.commands.ResultCursor.apply(id, ns)))
+        </td>
+      </tr><tr>
+        <td>
+          96
+        </td>
+        <td>
+          97
+        </td>
+        <td>
+          3549
+          -
+          3575
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          scala.Some.apply
+        </td>
+        <td style="background: #AEF1AE">
+          scala.Some.apply[reactivemongo.api.commands.ResultCursor](reactivemongo.api.commands.ResultCursor.apply(id, ns))
+        </td>
+      </tr><tr>
+        <td>
+          96
+        </td>
+        <td>
+          96
+        </td>
+        <td>
+          3554
+          -
+          3574
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          reactivemongo.api.commands.ResultCursor.apply
+        </td>
+        <td style="background: #AEF1AE">
+          reactivemongo.api.commands.ResultCursor.apply(id, ns)
+        </td>
+      </tr><tr>
+        <td>
+          97
+        </td>
+        <td>
+          104
+        </td>
+        <td>
+          3118
+          -
+          3590
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          play.api.libs.json.JsResult.get
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.JsValue.jsValueToJsLookup(doc).\(&quot;result&quot;).validateOpt[List[play.api.libs.json.JsObject]](json.this.Reads.traversableReads[List, play.api.libs.json.JsObject](immutable.this.List.canBuildFrom[play.api.libs.json.JsObject], json.this.Reads.JsObjectReads)).flatMap[reactivemongo.play.json.commands.JSONAggregationFramework.AggregationResult](((x0$1: Option[List[play.api.libs.json.JsObject]]) =&gt; x0$1 match {
+  case (x: List[play.api.libs.json.JsObject])Some[List[play.api.libs.json.JsObject]]((docs @ _)) =&gt; play.api.libs.json.JsSuccess.apply[reactivemongo.play.json.commands.JSONAggregationFramework.AggregationResult](JSONAggregationFramework.AggregationResult.apply(docs, scala.None), play.api.libs.json.JsSuccess.apply$default$2[Nothing])
+  case _ =&gt; json.this.JsValue.jsValueToJsLookup(doc).\(&quot;cursor&quot;).validate[play.api.libs.json.JsObject](json.this.Reads.JsObjectReads).flatMap[reactivemongo.play.json.commands.JSONAggregationFramework.AggregationResult](((cursor: play.api.libs.json.JsObject) =&gt; json.this.JsValue.jsValueToJsLookup(cursor).\(&quot;id&quot;).validate[Long](json.this.Reads.LongReads).flatMap[reactivemongo.play.json.commands.JSONAggregationFramework.AggregationResult](((id: Long) =&gt; json.this.JsValue.jsValueToJsLookup(cursor).\(&quot;ns&quot;).validate[String](json.this.Reads.StringReads).flatMap[reactivemongo.play.json.commands.JSONAggregationFramework.AggregationResult](((ns: String) =&gt; json.this.JsValue.jsValueToJsLookup(cursor).\(&quot;firstBatch&quot;).validate[List[play.api.libs.json.JsObject]](json.this.Reads.traversableReads[List, play.api.libs.json.JsObject](immutable.this.List.canBuildFrom[play.api.libs.json.JsObject], json.this.Reads.JsObjectReads)).map[reactivemongo.play.json.commands.JSONAggregationFramework.AggregationResult](((firstBatch: List[play.api.libs.json.JsObject]) =&gt; JSONAggregationFramework.AggregationResult.apply(firstBatch, scala.Some.apply[reactivemongo.api.commands.ResultCursor](reactivemongo.api.commands.ResultCursor.apply(id, ns)))))))))))
+})).get
+        </td>
+      </tr><tr>
+        <td>
+          97
+        </td>
+        <td>
+          103
+        </td>
+        <td>
+          3118
+          -
+          3590
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          play.api.libs.json.JsResult.get
+        </td>
+        <td style="background: #AEF1AE">
+          json.this.JsValue.jsValueToJsLookup(doc).\(&quot;result&quot;).validateOpt[List[play.api.libs.json.JsObject]](json.this.Reads.traversableReads[List, play.api.libs.json.JsObject](immutable.this.List.canBuildFrom[play.api.libs.json.JsObject], json.this.Reads.JsObjectReads)).flatMap[reactivemongo.play.json.commands.JSONAggregationFramework.AggregationResult](((x0$1: Option[List[play.api.libs.json.JsObject]]) =&gt; x0$1 match {
+  case (x: List[play.api.libs.json.JsObject])Some[List[play.api.libs.json.JsObject]]((docs @ _)) =&gt; play.api.libs.json.JsSuccess.apply[reactivemongo.play.json.commands.JSONAggregationFramework.AggregationResult](JSONAggregationFramework.AggregationResult.apply(docs, scala.None), play.api.libs.json.JsSuccess.apply$default$2[Nothing])
+  case _ =&gt; json.this.JsValue.jsValueToJsLookup(doc).\(&quot;cursor&quot;).validate[play.api.libs.json.JsObject](json.this.Reads.JsObjectReads).flatMap[reactivemongo.play.json.commands.JSONAggregationFramework.AggregationResult](((cursor: play.api.libs.json.JsObject) =&gt; json.this.JsValue.jsValueToJsLookup(cursor).\(&quot;id&quot;).validate[Long](json.this.Reads.LongReads).flatMap[reactivemongo.play.json.commands.JSONAggregationFramework.AggregationResult](((id: Long) =&gt; json.this.JsValue.jsValueToJsLookup(cursor).\(&quot;ns&quot;).validate[String](json.this.Reads.StringReads).flatMap[reactivemongo.play.json.commands.JSONAggregationFramework.AggregationResult](((ns: String) =&gt; json.this.JsValue.jsValueToJsLookup(cursor).\(&quot;firstBatch&quot;).validate[List[play.api.libs.json.JsObject]](json.this.Reads.traversableReads[List, play.api.libs.json.JsObject](immutable.this.List.canBuildFrom[play.api.libs.json.JsObject], json.this.Reads.JsObjectReads)).map[reactivemongo.play.json.commands.JSONAggregationFramework.AggregationResult](((firstBatch: List[play.api.libs.json.JsObject]) =&gt; JSONAggregationFramework.AggregationResult.apply(firstBatch, scala.Some.apply[reactivemongo.api.commands.ResultCursor](reactivemongo.api.commands.ResultCursor.apply(id, ns)))))))))))
+})).get
+        </td>
+      </tr>
+    </table>
+          </div>
+        </div>
+      </body>
+    </html>
