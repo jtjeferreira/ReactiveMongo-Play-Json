@@ -2,7 +2,8 @@ organization := "org.reactivemongo"
 
 name := "reactivemongo-play-json"
 
-val buildVersion = "0.12-RC5"
+val nextMajor = "0.12.0"
+val buildVersion = "0.12-RC6"
 
 version := buildVersion
 
@@ -11,7 +12,10 @@ scalaVersion := "2.11.8"
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-target:jvm-1.8")
 
 scalacOptions in (Compile, doc) := Seq(
-  "-Ywarn-dead-code", "-Ywarn-unused-import", "-unchecked", "-deprecation")
+  "-Ywarn-dead-code", "-Ywarn-unused-import", "-unchecked", "-deprecation",
+  /*"-diagrams", */"-implicits", "-skip-packages", "samples") ++
+  Opts.doc.title("ReactiveMongo Play JSON API") ++
+  Opts.doc.version(nextMajor)
 
 crossScalaVersions := Seq(scalaVersion.value)
 
