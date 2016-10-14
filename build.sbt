@@ -26,7 +26,7 @@ resolvers ++= Seq(
   "Typesafe repository releases" at "http://repo.typesafe.com/typesafe/releases/")
 
 libraryDependencies ++= {
-  val playVer = sys.env.get("PLAY_VERSION").getOrElse("2.4.8")
+  val playVer = sys.env.get("PLAY_VERSION").getOrElse("2.5.8")
 
   Seq(
     "org.reactivemongo" %% "reactivemongo" % buildVersion % "provided" cross CrossVersion.binary,
