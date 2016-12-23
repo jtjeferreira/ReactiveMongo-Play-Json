@@ -1,21 +1,26 @@
+import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
+import com.typesafe.tools.mima.plugin.MimaKeys.previousArtifacts
+
 organization := "org.reactivemongo"
 
 name := "reactivemongo-play-json"
 
-val nextMajor = "0.12.0"
-val buildVersion = "0.12-RC6"
+val nextRelease = "0.12.1"
+val buildVersion = nextRelease
 
 version := s"$buildVersion-play24"
 
-scalaVersion := "2.11.8"
+scalaVersion in ThisBuild := "2.11.8"
 
-scalacOptions ++= Seq("-unchecked", "-deprecation", "-target:jvm-1.8")
+scalacOptions ++= Seq(
+  "-unchecked", "-deprecation", "-target:jvm-1.8",
+  "-Ywarn-unused-import", "-Ywarn-value-discard", "-Ywarn-dead-code")
 
-scalacOptions in (Compile, doc) := Seq(
+scalacOptions in (Compile, doc) ++= Seq(
   "-Ywarn-dead-code", "-Ywarn-unused-import", "-unchecked", "-deprecation",
   /*"-diagrams", */"-implicits", "-skip-packages", "samples") ++
   Opts.doc.title("ReactiveMongo Play JSON API") ++
-  Opts.doc.version(nextMajor)
+  Opts.doc.version(nextRelease)
 
 crossScalaVersions := Seq(scalaVersion.value)
 
@@ -25,9 +30,13 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("snapshots"),
   "Typesafe repository releases" at "http://repo.typesafe.com/typesafe/releases/")
 
-libraryDependencies ++= Seq(
-  "org.reactivemongo" %% "reactivemongo" % buildVersion % "provided" cross CrossVersion.binary,
-  "com.typesafe.play" %% "play-json" % "2.4.8" % "provided" cross CrossVersion.binary)
+libraryDependencies ++= {
+  val playVer = sys.env.get("PLAY_VERSION").getOrElse("2.4.8")
+
+  Seq(
+    "org.reactivemongo" %% "reactivemongo" % buildVersion % "provided" cross CrossVersion.binary,
+    "com.typesafe.play" %% "play-json" % playVer % "provided" cross CrossVersion.binary)
+}
 
 // Test
 fork in Test := false
@@ -41,10 +50,33 @@ testOptions in Test += Tests.Cleanup(cl => {
 })
 
 libraryDependencies ++= Seq(
-  "org.specs2" %% "specs2-core" % "3.8.3",
+  "org.specs2" %% "specs2-core" % "3.8.6",
   "org.slf4j" % "slf4j-simple" % "1.7.13").map(_ % Test)
 
+// Travis CI
+val travisEnv = taskKey[Unit]("Print Travis CI env")
+
+travisEnv in Test := { // test:travisEnv from SBT CLI
+  val specs = List[(String, List[String])](
+    "PLAY_VERSION" -> List("2.3.10", "2.5.9")
+  )
+
+  def matrix = specs.flatMap {
+    case (key, values) => values.map(key -> _)
+  }.combinations(specs.size).collect {
+    case flags if (flags.map(_._1).toSet.size == specs.size) =>
+      flags.sortBy(_._1).map { case (k, v) => s"$k=$v" }
+  }.map { c => s"""  - ${c mkString " "}""" }
+
+  println(s"""Travis CI env:\r\n${matrix.mkString("\r\n")}""")
+}
+
 // Publish
+val previousVersion = "0.12.0"
+val mimaSettings = mimaDefaultSettings ++ Seq(
+  previousArtifacts := Set(
+    organization.value %% moduleName.value % previousVersion)
+)
 
 lazy val publishSettings = {
   @inline def env(n: String): String = sys.env.get(n).getOrElse(n)
@@ -52,7 +84,7 @@ lazy val publishSettings = {
   val repoName = env("PUBLISH_REPO_NAME")
   val repoUrl = env("PUBLISH_REPO_URL")
 
-  Seq(
+  mimaSettings ++ Seq(
     publishMavenStyle := true,
     publishArtifact in Test := false,
     publishTo := Some(repoUrl).map(repoName at _),
