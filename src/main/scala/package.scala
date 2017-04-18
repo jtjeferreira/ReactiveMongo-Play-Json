@@ -314,10 +314,14 @@ sealed trait BSONFormats extends LowerImplicitBSONHandlers {
 
   implicit object BSONRegexFormat extends PartialFormat[BSONRegex] {
     val partialReads: PartialFunction[JsValue, JsResult[BSONRegex]] = {
-      case js: JsObject if js.values.size == 1 && js.fields.head._1 == f"$$regex" =>
-        js.fields.head._2.asOpt[String].
+      case js: JsObject if (
+        js.values.size == 1 && js.fields.headOption.exists(_._1 == f"$$regex")
+      ) => {
+        js.fields.headOption.flatMap(_._2.asOpt[String]).
           map(rx => JsSuccess(BSONRegex(rx, ""))).
           getOrElse(JsError(__ \ f"$$regex", "string expected"))
+      }
+
       case js: JsObject if js.value.size == 2 && js.value.exists(_._1 == f"$$regex") && js.value.exists(_._1 == f"$$options") =>
         val rx = (js \ f"$$regex").asOpt[String]
         val opts = (js \ f"$$options").asOpt[String]
@@ -621,6 +625,7 @@ sealed trait ImplicitBSONHandlers extends BSONFormats {
 }
 
 sealed trait LowerImplicitBSONHandlers {
+  import scala.language.implicitConversions
   import reactivemongo.bson.{ BSONElement, Producer }
 
   implicit def jsWriter[A <: JsValue, B <: BSONValue] = new BSONWriter[A, B] {
