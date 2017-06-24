@@ -7,7 +7,7 @@ name := "reactivemongo-play-json"
 
 scalaVersion in ThisBuild := "2.11.8"
 
-crossScalaVersions in ThisBuild := Seq("2.11.8", "2.12.1")
+crossScalaVersions in ThisBuild := Seq("2.11.8")
 
 crossVersion in ThisBuild := CrossVersion.binary
 
@@ -16,7 +16,6 @@ scalacOptions ++= Seq(
   "-unchecked",
   "-deprecation",
   "-feature",
-  "-Xfatal-warnings",
   "-Xlint",
   "-Ywarn-numeric-widen",
   "-Ywarn-dead-code",
